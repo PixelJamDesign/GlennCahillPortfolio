@@ -823,6 +823,7 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
   }
   // collection cutscene state: bag slides in, unzips, item flies in, zips, leaves
   let bagScene = null;
+  const FLY_T = 44; // ticks the collectable spends flying into the bag (60/s)
   let pendingDialog = null;
   let backpackPulse = 0;
 
@@ -1599,17 +1600,22 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
         if (s.phase === 'fly') {
           const it = COLLECT_IMG[s.item.img];
           if (it) {
-            const t2 = s.t / 22;
+            const t2 = s.t / FLY_T;
             const e2 = t2 * t2;
             const sx2 = s.sx - camX, sy2 = s.sy - camY + HUD_H;
-            const txp = bx + bw * 0.45, typ = by + 8;
+            // aim for the middle of the open mouth, not the top rim,
+            // so the item visibly sinks INTO the bag
+            const txp = bx + bw * 0.45, typ = by + bh * 0.34;
             const x = sx2 + (txp - sx2) * e2;
             const y = sy2 + (typ - sy2) * e2 - Math.sin(Math.PI * t2) * 16;
             // balloon up mid-flight so the item is clearly readable, then
             // shrink back down as it drops into the bag
             const sc = (1 - 0.6 * e2) / 3 + Math.sin(Math.PI * t2) * 0.5;
             ctx.imageSmoothingEnabled = false;
+            // fade out over the last stretch: swallowed, not hidden behind
+            if (t2 > 0.8) ctx.globalAlpha = Math.max(0, (1 - t2) / 0.2);
             ctx.drawImage(it, x - (it.width * sc) / 2, y - (it.height * sc) / 2, it.width * sc, it.height * sc);
+            ctx.globalAlpha = 1;
           }
         }
         ctx.restore();
@@ -1726,7 +1732,7 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
       if (bagScene) {
         const s = bagScene;
         s.t++;
-        const durs = { in: 14, unzip: 16, fly: 22, zip: 16, out: 14 };
+        const durs = { in: 14, unzip: 16, fly: FLY_T, zip: 16, out: 14 };
         if (s.t >= durs[s.phase]) {
           s.t = 0;
           if (s.phase === 'in') { s.phase = 'unzip'; blip(988, 0.05, 0.03); }
