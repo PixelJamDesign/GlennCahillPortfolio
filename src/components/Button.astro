@@ -1,0 +1,27 @@
+---
+// Reusable button. variant="primary" = gradient fill, "ghost" = outlined secondary.
+// arrow="down" | "right" appends the arrow icon used on primary CTAs.
+interface Props {
+  href: string;
+  variant?: 'primary' | 'ghost';
+  arrow?: 'down' | 'right';
+  class?: string;
+}
+
+const { href, variant = 'ghost', arrow, class: extra } = Astro.props;
+const cls = [variant === 'primary' ? 'btn-primary' : 'btn-ghost', extra].filter(Boolean).join(' ');
+---
+
+<a class={cls} href={href}>
+  <slot />
+  {arrow === 'down' && (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M7 1V13M7 13L1 7M7 13L13 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  )}
+  {arrow === 'right' && (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M1 7H13M13 7L7 1M13 7L7 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  )}
+</a>

@@ -1,0 +1,801 @@
+---
+import '../styles/global.css';
+import Button from '../components/Button.astro';
+
+const work = [
+  {
+    slug: 'standout-ui-design-system',
+    title: 'StandOut UI — Design System',
+    tag: 'Design System',
+    img: '/images/work/pixel-jam/standout-ui.webp',
+    feature: true,
+  },
+  {
+    slug: 'bite-insight---health-app',
+    title: 'Bite Insight — Health App',
+    tag: 'Product Design',
+    img: '/images/work/bite-insight/bite-insight.jpg',
+  },
+  {
+    slug: 'pain-emotion-ai-app',
+    title: 'Pain Emotion — AI App',
+    tag: 'Product Design',
+    img: '/images/work/huumun/pain-emotion.jpg',
+  },
+  {
+    slug: 'euro-2020---tournament-app',
+    title: 'Euro 2020 — Tournament App',
+    tag: 'Product Design',
+    img: '/images/work/pixel-jam/euro-2020.png',
+  },
+  {
+    slug: 'the-cornermen-website-design',
+    title: 'The Cornermen',
+    tag: 'UI Design',
+    img: '/images/work/pixel-jam/cornermen.webp',
+  },
+  {
+    slug: 'lumberjack-tree-services-rebrand',
+    title: 'LumberJack Tree Services',
+    tag: 'Branding',
+    img: '/images/work/pixel-jam/lumberjack.webp',
+  },
+  {
+    slug: 'chronic-pain-academy',
+    title: 'Chronic Pain Academy',
+    tag: 'UI Design',
+    img: '/images/work/huumun/chronic-pain.png',
+  },
+];
+
+const career = [
+  { years: '2025 — Now', company: 'SMARTY Mobile', role: 'Design System Engineer', kind: 'Contract',
+    blurb: "Building CleanSlate, the design system behind SMARTY's React Native rebuild. Tokens at the foundations, less friction in delivery.",
+    projects: ['CleanSlate architecture, tokens & primitives', 'Component library of "ingredients & recipes"', 'React Native build across iOS, Android & web', 'Rapid prototyping with Code Connect + Claude'] },
+  { years: '2024 — 25', company: 'Three Mobile', role: 'Senior Design System + UI Designer', kind: 'Contract',
+    blurb: "Modernised the design system around what Figma had just made possible: variables, theme modes, spacing modes. The app's store rating went from 2.9 to 4.4 while I was there.",
+    projects: ['Design system modernisation in Figma', 'Theme switching with variables & modes', 'Three Rewards in the core app'] },
+  { years: '2024', company: 'CIBC', role: 'Design Systems Designer', kind: 'Contract',
+    blurb: 'Brought in to finish the Nexus library migration into Figma, then handed it over with training so the internal team could run it.',
+    projects: ['Nexus library migration to Figma', 'Team training & handover'] },
+  { years: '2023 — 24', company: 'Lloyds Banking Group', role: 'Design Systems Lead', kind: 'Contract',
+    blurb: 'Eighteen separate Sketch libraries and no single point of truth. Rebuilt the Scottish Widows system from the audit up: foundation variables, semantic tokens, styles bound to them.',
+    projects: ['Component audit & first system', 'Foundation variable library', 'Semantic tokens & theme variables', 'Dev build scoped with engineering'] },
+  { years: '2022 — 23', company: 'Centrica — British Gas', role: 'Senior UI/UX Designer', kind: 'Contract',
+    blurb: 'Two named journeys, Upgrades cross-sell and Book a repair, both grounded in deep UX testing with the findings presented back to stakeholders.',
+    projects: ['Upgrades Xsell journey', 'Book a repair journey', 'Research playback for stakeholders'] },
+  { years: '2021', company: 'Fastic', role: 'Senior UI/UX Designer', kind: 'Contract',
+    blurb: 'Restructured the long "take the quiz" onboarding into a multi-step flow. Conversion improved, and the testing behind it kept producing insights the team used.',
+    projects: ['"Take the quiz" onboarding restructure', 'Goals screen', 'In-quiz promo segments'] },
+  { years: '2021', company: 'BMI Group', role: 'Senior UI/UX Designer', kind: 'Contract',
+    blurb: 'A one month contract rebuilding an Adobe XD library in Figma. The first stop after going freelance.',
+    projects: ['Adobe XD to Figma library rebuild'] },
+  { years: '2017 — 21', company: 'huumun', role: 'Senior UI/UX & Motion Designer', kind: 'Perm',
+    blurb: 'Led the Pharmiweb Solutions rebrand to huumun from concept through rollout, in between clinical app work for the big pharma names.',
+    img: '/images/career/huumun.png',
+    projects: ['Pharmiweb to huumun rebrand', 'Pfizer Pain Management Academy app', 'Nucala Index app'] },
+  { years: '2016', company: 'Volume', role: 'Senior Designer', kind: 'Perm',
+    blurb: 'Digital content and wireframes built on proper content hierarchy, plus mentoring the junior designers.' },
+  { years: '2013 — 16', company: 'Heathwallace', role: 'Senior UI/UX Designer', kind: 'Perm',
+    blurb: 'Led bank and finance work: the 2013 Nationwide redesign, an HSBC CRM tablet app back when tablet-first banking was a novelty, and more besides.',
+    projects: ['Nationwide redesign (2013)', 'HSBC CRM tablet app "Project Maxwell"', 'Jupiter Asset Management', 'AON & Alere'] },
+  { years: '2010 — 13', company: 'Webfusion', role: 'Middleweight Designer', kind: 'Perm',
+    blurb: 'Press ads for 123-reg and Webfusion across the tech magazines, dashboards and landing pages for both brands, and the 123-reg YouTube channel.',
+    projects: ['123-reg & Webfusion press campaigns', 'Product dashboards & landing pages', '123-reg YouTube channel'] },
+  { years: '2006 — 10', company: 'Moose Internet Services', role: 'Junior Graphic & Web Designer', kind: 'Perm',
+    blurb: 'Where it started, and the only designer in the building. Websites in HTML, CSS and JavaScript (and yes, Flash), banners and GIFs for digital campaigns, and print from business cards to instructional booklets.',
+    tags: ['HTML / CSS / JS', 'Flash sites & banners', 'GIFs', 'Print design'] },
+];
+
+const marqueeItems = ['Design Systems', 'UI Design', 'UX', 'Motion', 'Brand', 'Figma', 'Tokens', 'Prototyping'];
+
+// ---- availability badge ----
+// Change AVAILABILITY to switch the hero badge. One word, no other edits needed.
+const AVAILABILITY = 'freelance'; // 'contract' | 'freelance' | 'limited' | 'booked'
+const availabilityStates = {
+  contract: { text: 'Available for contract work', tone: 'green' },
+  freelance: { text: 'Available for freelance work', tone: 'green' },
+  limited: { text: 'Limited availability', tone: 'amber' },
+  booked: { text: 'Fully booked right now', tone: 'grey' },
+};
+const availability = availabilityStates[AVAILABILITY];
+
+const brands = [
+  { name: 'Lloyds Bank', img: '/images/brands/lloyds.svg', h: 52 },
+  { name: 'British Gas', img: '/images/brands/british-gas.svg', h: 52 },
+  { name: 'Three', img: '/images/brands/three.svg', h: 56 },
+  { name: 'SMARTY', img: '/images/brands/smarty.svg' },
+  { name: 'CIBC', img: '/images/brands/cibc.svg', h: 30 },
+  { name: 'HSBC', img: '/images/brands/hsbc.svg' },
+  { name: 'Scottish Widows', img: '/images/brands/scottish-widows.svg', h: 44 },
+  { name: 'Nationwide', img: '/images/brands/nationwide.svg', h: 30 },
+  { name: 'Fastic', img: '/images/brands/fastic.svg', h: 52 },
+];
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Glenn Cahill — Design Systems & UI Design</title>
+    <meta
+      name="description"
+      content="Glenn Cahill is a UK-based designer specialising in design systems, UI/UX and motion. Twenty years of shipping digital products for banks, telcos and startups."
+    />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="preload" href="/fonts/grift-regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/grift-extrabold.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- TEMP: Figma capture — remove after export -->
+    <script is:inline src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+    <meta property="og:title" content="Glenn Cahill — Design Systems & UI Design" />
+    <meta property="og:description" content="Design systems, interfaces and motion. Twenty years in." />
+    <meta property="og:type" content="website" />
+  </head>
+
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="progress" aria-hidden="true"></div>
+    <div class="cursor-glow" aria-hidden="true"></div>
+
+    <nav class="nav" id="nav">
+      <div class="nav-inner">
+        <a href="#top" class="nav-logo" aria-label="Glenn Cahill — home">
+          <img src="/images/logo.svg" alt="" width="42" height="42" />
+        </a>
+        <div class="nav-links">
+          <a class="nav-link" href="#about"><i>01</i>About</a>
+          <a class="nav-link" href="#work"><i>02</i>Work</a>
+          <a class="nav-link" href="#career"><i>03</i>Career</a>
+          <a class="nav-link" href="#passions"><i>04</i>Passions</a>
+          <Button href="#contact">Let's talk</Button>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero" id="top">
+      <div class="aurora" aria-hidden="true">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+      </div>
+      <div class="hero-beam" aria-hidden="true"></div>
+      <canvas class="hero-particles" id="heroParticles" aria-hidden="true"></canvas>
+      <div class="hero-portrait" aria-hidden="true">
+        <img src="/images/glenn_portrait.webp" alt="" />
+      </div>
+
+      <div class="wrap hero-content">
+        <p class="hero-eyebrow"><span class={`pulse pulse-${availability.tone}`}></span> {availability.text}</p>
+        <h1 class="hero-title" id="heroTitle">
+          <span class="line line-1">Glenn</span>
+          <span class="line line-2">Cahill</span>
+        </h1>
+        <p class="hero-roles">
+          I design
+          <span class="swap-wrap"><span class="swap" id="roleSwap">design systems</span></span>
+        </p>
+        <p class="hero-sub">
+          Twenty years designing digital products and the systems behind them, for banks, telcos
+          and startups that needed things to work properly.
+        </p>
+        <div class="hero-ctas">
+          <Button variant="primary" href="#work" arrow="down">See the work</Button>
+          <Button href="#contact">Get in touch</Button>
+        </div>
+      </div>
+
+      <div class="hero-scroll" aria-hidden="true">
+        Scroll
+        <span class="bar"></span>
+      </div>
+    </header>
+
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        {[0, 1].map(() => (
+          <Fragment>
+            {marqueeItems.map((item) => (
+              <span>{item} <i class="msep"></i></span>
+            ))}
+          </Fragment>
+        ))}
+      </div>
+    </div>
+
+    <section class="section" id="about">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="section-num">01</span>
+          <h2 class="section-title">About</h2>
+          <span class="rule"></span>
+        </div>
+
+        <div class="about-grid">
+          <div class="about-copy">
+            <p class="reveal">
+              I've spent two decades in digital design, and most of it where
+              <strong>design meets code</strong>. These days I build
+              <span class="accent">design systems</span> — the tokens, the components, the
+              documentation nobody else wants to write — for companies like Lloyds, Three and
+              British Gas.
+            </p>
+            <p class="reveal" style="--d: 0.1s">
+              A good system means a designer ships in hours, not weeks. That's what I'm after.
+            </p>
+            <p class="reveal" style="--d: 0.2s">
+              Before the systems work came years of UI, brand and motion design. It still shows —
+              I care how things move, not only how they look.
+            </p>
+          </div>
+
+          <div class="stats">
+            <div class="stat reveal"><b data-count="20">0</b><span>Years in the industry</span></div>
+            <div class="stat reveal" style="--d: 0.1s"><b data-count="6">0</b><span>Design systems built</span></div>
+            <div class="stat reveal" style="--d: 0.2s"><b data-count="16">0</b><span>Case studies</span></div>
+          </div>
+        </div>
+
+        <div class="clients reveal">
+          <p>Brands I've worked with</p>
+          <div class="logo-marquee">
+            <div class="logo-track">
+              {[0, 1].map(() => (
+                <Fragment>
+                  {brands.map((b) =>
+                    b.img ? (
+                      <span class="logo-item"><img src={b.img} alt={b.name} title={b.name} style={b.h ? `height:${b.h}px` : undefined} /></span>
+                    ) : (
+                      <span class="logo-item logo-text">{b.name}</span>
+                    )
+                  )}
+                </Fragment>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section work" id="work">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="section-num">02</span>
+          <h2 class="section-title">Selected Work</h2>
+          <span class="rule"></span>
+        </div>
+
+        <div class="work-grid">
+          {work.map((p, i) => (
+            <a
+              class={`work-card reveal${p.feature ? ' feature' : ''}`}
+              style={`--d: ${(i % 2) * 0.1}s`}
+              href={`/work/${p.slug}`}
+            >
+              <div class="work-media">
+                <img src={p.img} alt={p.title} loading={i < 2 ? 'eager' : 'lazy'} />
+              </div>
+              <div class="work-info">
+                <div>
+                  <span class="tag">{p.tag}</span>
+                  <h3>{p.title}</h3>
+                </div>
+                <span class="work-arrow" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
+                    <path d="M1 13L13 1M13 1H3M13 1V11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        <p class="work-more reveal">
+          <Button href="/work">All sixteen case studies</Button>
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="career">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="section-num">03</span>
+          <h2 class="section-title">Career</h2>
+          <span class="rule"></span>
+        </div>
+
+        <div class="career-list">
+          {career.map((job, i) => (
+            <div
+              class="career-row reveal"
+              style={`--d: ${Math.min(i * 0.04, 0.3)}s`}
+              data-company={job.company}
+              data-years={job.years}
+              data-blurb={job.blurb}
+              data-img={job.img}
+              data-tags={job.tags ? job.tags.join('|') : undefined}
+              data-projects={job.projects ? job.projects.join('|') : undefined}
+            >
+              <span class="years">{job.years}</span>
+              <span class="company">{job.company}</span>
+              <span class="role">{job.role}</span>
+              <span class="kind">{job.kind}</span>
+              <div class="career-detail">
+                {job.img && <img src={job.img} alt={`${job.company} project`} loading="lazy" />}
+                <p class="career-detail-meta">{job.role} · {job.kind}</p>
+                <p>{job.blurb}</p>
+                {job.projects && (
+                  <ul class="career-detail-projects">
+                    {job.projects.map((p) => <li>{p}</li>)}
+                  </ul>
+                )}
+                {job.tags && (
+                  <div class="career-detail-tags">
+                    {job.tags.slice(0, 4).map((t) => <span>{t}</span>)}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div class="career-card" id="careerCard" aria-hidden="true">
+          <div class="career-card-media" hidden>
+            <img src="" alt="" />
+          </div>
+          <p class="career-card-head"><b></b><span></span></p>
+          <p class="career-card-blurb"></p>
+          <ul class="career-card-projects" hidden></ul>
+          <div class="career-card-tags" hidden></div>
+        </div>
+
+        <p class="work-more reveal">
+          <Button href="/game">🎮 Or play it — Glenn: The Game</Button>
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="passions">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="section-num">04</span>
+          <h2 class="section-title">Passions</h2>
+          <span class="rule"></span>
+        </div>
+
+        <div class="passion-grid">
+          <a class="passion-card reveal" href="https://pixeljam.design" target="_blank" rel="noopener">
+            <div class="passion-bg" aria-hidden="true">
+              <img src="/images/passions/pixel-jam.webp" alt="" loading="lazy" onerror="this.remove()" />
+            </div>
+            <span class="tag">Design studio</span>
+            <img class="passion-logo" src="/images/passions/pixel-jam-logo.svg" alt="Pixel Jam" onerror="this.nextElementSibling.hidden = false; this.remove()" />
+            <h3 hidden>Pixel Jam</h3>
+            <div class="passion-more">
+              <div class="passion-more-inner">
+                <p>The studio side of my desk. Where the client hat comes off and the ideas that don't fit a brief get built anyway.</p>
+                <span class="passion-link">pixeljam.design
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path d="M1 13L13 1M13 1H3M13 1V11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </a>
+
+          <a class="passion-card reveal" style="--d: 0.1s" href="https://biteinsight.co.uk/" target="_blank" rel="noopener">
+            <div class="passion-bg" aria-hidden="true">
+              <img src="/images/passions/bite-insight.webp" alt="" loading="lazy" onerror="this.remove()" />
+            </div>
+            <span class="tag">Side project</span>
+            <img class="passion-logo" src="/images/passions/bite-insight-logo.svg" alt="Bite Insight" onerror="this.nextElementSibling.hidden = false; this.remove()" />
+            <h3 hidden>Bite Insight</h3>
+            <div class="passion-more">
+              <div class="passion-more-inner">
+                <p>A food scanner app that makes sense of the label for you. Scan a barcode and see what's inside, checked against your own health conditions, allergies and diet.</p>
+                <span class="passion-link">biteinsight.co.uk
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path d="M1 13L13 1M13 1H3M13 1V11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section contact" id="contact">
+      <div class="aurora" aria-hidden="true">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-3"></div>
+      </div>
+      <div class="wrap">
+        <h2 class="reveal">Got an idea?</h2>
+        <h3 class="contact-sub reveal">Let's bring it to life <span class="accent">together.</span></h3>
+        <a class="contact-email reveal" href="mailto:glenn@glenncahill.com">glenn@glenncahill.com</a>
+        <div class="contact-links reveal">
+          <a href="https://linkedin.com/in/glenncahill" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="wrap footer-inner">
+        <img src="/images/logo.svg" alt="Glenn Cahill logo" />
+        <span>© 2026 Glenn Cahill. Designed and built by me.</span>
+        <span>Reading, UK</span>
+      </div>
+    </footer>
+
+    <script>
+      // Split hero title into animated chars
+      document.querySelectorAll('.hero-title .line').forEach((line, li) => {
+        const text = line.textContent.trim();
+        line.textContent = '';
+        [...text].forEach((ch, i) => {
+          const s = document.createElement('span');
+          s.className = 'char';
+          s.textContent = ch;
+          s.style.animationDelay = `${0.15 + li * 0.12 + i * 0.045}s`;
+          line.appendChild(s);
+        });
+      });
+
+      // Tablet/mobile only: fit each title line to a share of the container width.
+      // Desktop keeps the stylesheet's clamp() size untouched.
+      const fitHeroTitle = () => {
+        const fit = matchMedia('(max-width: 1024px)').matches;
+        // phones: 80% of the width; tablets: 70%, leaving room for the portrait
+        const factor = matchMedia('(max-width: 640px)').matches ? 0.8 : 0.7;
+        document.querySelectorAll('.hero-title .line').forEach((line) => {
+          if (!fit) { line.style.fontSize = ''; return; }
+          const chars = line.querySelectorAll('.char');
+          if (!chars.length) return;
+          const fs = parseFloat(getComputedStyle(line).fontSize);
+          const first = chars[0].getBoundingClientRect();
+          const last = chars[chars.length - 1].getBoundingClientRect();
+          const textW = last.right - first.left;
+          if (textW > 0) {
+            line.style.fontSize = `${fs * ((line.clientWidth * factor) / textW)}px`;
+          }
+        });
+      };
+      document.fonts.ready.then(fitHeroTitle);
+      let fitT;
+      addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitHeroTitle, 120); });
+
+      // Rotating role word
+      const roles = ['design systems', 'interfaces', 'motion', 'brands'];
+      const swap = document.getElementById('roleSwap');
+      let ri = 0;
+      if (swap && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        setInterval(() => {
+          if (document.hidden) return;
+          swap.style.opacity = '0';
+          swap.style.transform = 'translateY(-60%)';
+          setTimeout(() => {
+            ri = (ri + 1) % roles.length;
+            swap.textContent = roles[ri];
+            swap.style.transition = 'none';
+            swap.style.transform = 'translateY(60%)';
+            setTimeout(() => {
+              swap.style.transition = '';
+              swap.style.opacity = '1';
+              swap.style.transform = 'translateY(0)';
+            }, 30);
+          }, 420);
+        }, 2600);
+      }
+
+      // Hero particles + parallax
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const hero = document.querySelector('.hero');
+      const canvas = document.getElementById('heroParticles');
+      if (hero && canvas && !reduceMotion) {
+        const ctx = canvas.getContext('2d');
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        const colors = ['133, 112, 255', '255, 112, 255', '242, 240, 255'];
+        let W, H, parts;
+
+        const size = () => {
+          W = hero.clientWidth;
+          H = hero.clientHeight;
+          canvas.width = W * dpr;
+          canvas.height = H * dpr;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        };
+
+        const seed = () => {
+          parts = Array.from({ length: Math.round(W / 18) }, () => ({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: 0.6 + Math.random() * 1.6,
+            vy: 0.08 + Math.random() * 0.25,
+            vx: (Math.random() - 0.5) * 0.08,
+            c: colors[(Math.random() * colors.length) | 0],
+            tw: Math.random() * Math.PI * 2,
+          }));
+        };
+
+        size();
+        seed();
+        addEventListener('resize', () => { size(); seed(); }, { passive: true });
+
+        // cursor position in hero coordinates; matches the cursor-glow radius
+        const GLOW_R = 220;
+        let mx = -9999, my = -9999;
+        hero.addEventListener('pointermove', (e) => {
+          const r = hero.getBoundingClientRect();
+          mx = e.clientX - r.left;
+          my = e.clientY - r.top;
+        });
+        hero.addEventListener('pointerleave', () => { mx = my = -9999; });
+
+        // shooting stars: rare by design — one every 15–40s, so spotting one feels lucky
+        const meteors = [];
+        let nextMeteor = performance.now() + 5000 + Math.random() * 10000;
+
+        const spawnMeteor = () => {
+          const dir = Math.random() < 0.5 ? 1 : -1; // left or right
+          const angle = 0.35 + Math.random() * 0.25; // shallow diagonal, radians below horizontal
+          const speed = 9 + Math.random() * 4;
+          meteors.push({
+            x: dir === 1 ? Math.random() * W * 0.6 : W * 0.4 + Math.random() * W * 0.6,
+            y: Math.random() * H * 0.35,
+            vx: Math.cos(angle) * speed * dir,
+            vy: Math.sin(angle) * speed,
+            tail: 110 + Math.random() * 80,
+            dist: 0,
+            maxDist: 320 + Math.random() * 380,
+          });
+        };
+
+        const tick = (t) => {
+          ctx.clearRect(0, 0, W, H);
+
+          if (t > nextMeteor) {
+            if (!document.hidden) spawnMeteor();
+            nextMeteor = t + 15000 + Math.random() * 25000;
+          }
+
+          for (let i = meteors.length - 1; i >= 0; i--) {
+            const m = meteors[i];
+            m.x += m.vx;
+            m.y += m.vy;
+            m.dist += Math.hypot(m.vx, m.vy);
+            const prog = m.dist / m.maxDist;
+            if (prog >= 1 || m.x < -m.tail || m.x > W + m.tail || m.y > H + m.tail) {
+              meteors.splice(i, 1);
+              continue;
+            }
+            const a = Math.sin(Math.PI * prog); // fade in, peak, fade out
+            const len = m.tail * (0.6 + 0.4 * a);
+            const nx = m.vx / Math.hypot(m.vx, m.vy);
+            const ny = m.vy / Math.hypot(m.vx, m.vy);
+            const tx = m.x - nx * len;
+            const ty = m.y - ny * len;
+            const grad = ctx.createLinearGradient(m.x, m.y, tx, ty);
+            grad.addColorStop(0, `rgba(242, 240, 255, ${0.9 * a})`);
+            grad.addColorStop(0.3, `rgba(196, 181, 255, ${0.45 * a})`);
+            grad.addColorStop(1, 'rgba(133, 112, 255, 0)');
+            ctx.beginPath();
+            ctx.moveTo(m.x, m.y);
+            ctx.lineTo(tx, ty);
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 1.7;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            // bright head
+            ctx.beginPath();
+            ctx.arc(m.x, m.y, 1.6, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${a})`;
+            ctx.fill();
+          }
+
+          for (const p of parts) {
+            p.y -= p.vy;
+            p.x += p.vx;
+
+            const dx = p.x - mx;
+            const dy = p.y - my;
+            const d = Math.hypot(dx, dy);
+            let boost = 0;
+            if (d < GLOW_R && d > 0.001) {
+              const f = 1 - d / GLOW_R;
+              p.x += (dx / d) * f * 1.6;
+              p.y += (dy / d) * f * 1.6;
+              boost = f * 0.5;
+            }
+
+            if (p.y < -4) { p.y = H + 4; p.x = Math.random() * W; }
+            if (p.x < -4) p.x = W + 4;
+            if (p.x > W + 4) p.x = -4;
+
+            const a = Math.min(1, 0.18 + 0.4 * (0.5 + 0.5 * Math.sin(t / 900 + p.tw)) + boost);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r + boost * 1.2, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${p.c}, ${a})`;
+            ctx.fill();
+          }
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+
+      if (hero && !reduceMotion && matchMedia('(pointer: fine)').matches) {
+        const aurora = hero.querySelector('.aurora');
+        const heroTitle = document.getElementById('heroTitle');
+        hero.addEventListener('pointermove', (e) => {
+          const r = hero.getBoundingClientRect();
+          const nx = (e.clientX - r.left) / r.width - 0.5;
+          const ny = (e.clientY - r.top) / r.height - 0.5;
+          if (aurora) aurora.style.translate = `${nx * 26}px ${ny * 22}px`;
+          if (heroTitle) {
+            // the filter on the title re-anchors fixed backgrounds to its own
+            // box, so the haze coordinates are relative to the title, not viewport
+            const tr = heroTitle.getBoundingClientRect();
+            heroTitle.style.setProperty('--hx', `${e.clientX - tr.left}px`);
+            heroTitle.style.setProperty('--hy', `${e.clientY - tr.top}px`);
+          }
+        });
+      }
+
+      // Career section interactions: hover card on wide fine-pointer screens,
+      // tap-to-expand everywhere else. Gated per-event so window resizes and
+      // convertible devices behave correctly.
+      const careerTapMode = () =>
+        matchMedia('(pointer: coarse)').matches || matchMedia('(max-width: 1024px)').matches;
+
+      const careerCard = document.getElementById('careerCard');
+      if (careerCard) {
+        const head = careerCard.querySelector('.career-card-head b');
+        const yearsEl = careerCard.querySelector('.career-card-head span');
+        const blurbEl = careerCard.querySelector('.career-card-blurb');
+        const media = careerCard.querySelector('.career-card-media');
+        const mediaImg = media.querySelector('img');
+        const tagsEl = careerCard.querySelector('.career-card-tags');
+        const projectsEl = careerCard.querySelector('.career-card-projects');
+        const list = document.querySelector('.career-list');
+
+        const moveCard = (e) => {
+          const cw = careerCard.offsetWidth, ch = careerCard.offsetHeight;
+          let x = e.clientX + 22, y = e.clientY + 20;
+          if (x + cw > innerWidth - 12) x = e.clientX - cw - 22;
+          if (y + ch > innerHeight - 12) y = e.clientY - ch - 20;
+          careerCard.style.transform = `translate(${x}px, ${y}px)`;
+        };
+
+        list.addEventListener('pointerover', (e) => {
+          if (careerTapMode()) return;
+          const row = e.target.closest('.career-row');
+          if (!row) return;
+          head.textContent = row.dataset.company;
+          yearsEl.textContent = row.dataset.years;
+          blurbEl.textContent = row.dataset.blurb;
+          if (row.dataset.img) {
+            mediaImg.src = row.dataset.img;
+            media.hidden = false;
+          } else {
+            mediaImg.removeAttribute('src');
+            media.hidden = true;
+          }
+          if (row.dataset.projects) {
+            projectsEl.innerHTML = '';
+            row.dataset.projects.split('|').slice(0, 4).forEach((p) => {
+              const li = document.createElement('li');
+              li.textContent = p;
+              projectsEl.appendChild(li);
+            });
+            projectsEl.hidden = false;
+          } else {
+            projectsEl.hidden = true;
+          }
+          if (row.dataset.tags) {
+            tagsEl.innerHTML = '';
+            row.dataset.tags.split('|').slice(0, 4).forEach((t) => {
+              const s = document.createElement('span');
+              s.textContent = t;
+              tagsEl.appendChild(s);
+            });
+            tagsEl.hidden = false;
+          } else {
+            tagsEl.hidden = true;
+          }
+          careerCard.classList.add('on');
+        });
+        list.addEventListener('pointermove', moveCard);
+        list.addEventListener('pointerleave', () => careerCard.classList.remove('on'));
+      }
+
+      // Mobile + tablet: tap a career row to expand its detail inline
+      {
+        const list = document.querySelector('.career-list');
+        list.addEventListener('click', (e) => {
+          if (!careerTapMode()) return;
+          const row = e.target.closest('.career-row');
+          if (!row) return;
+          const wasOpen = row.classList.contains('open');
+          list.querySelectorAll('.career-row.open').forEach((r) => r.classList.remove('open'));
+          if (!wasOpen) row.classList.add('open');
+        });
+      }
+
+      // Scroll: progress bar + nav behaviour
+      const progress = document.querySelector('.progress');
+      const nav = document.getElementById('nav');
+      let lastY = 0;
+      addEventListener(
+        'scroll',
+        () => {
+          const y = scrollY;
+          const max = document.documentElement.scrollHeight - innerHeight;
+          if (progress) progress.style.transform = `scaleX(${max ? y / max : 0})`;
+          if (nav) {
+            nav.classList.toggle('scrolled', y > 20);
+            nav.classList.toggle('hidden', y > lastY && y > 300);
+          }
+          lastY = y;
+        },
+        { passive: true }
+      );
+
+      // Cursor glow (pointer devices only)
+      const glow = document.querySelector('.cursor-glow');
+      if (glow && matchMedia('(pointer: fine)').matches) {
+        addEventListener('pointermove', (e) => {
+          glow.style.opacity = '1';
+          glow.style.left = `${e.clientX}px`;
+          glow.style.top = `${e.clientY}px`;
+        });
+      }
+
+      // Reveal on scroll
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((en) => {
+            if (en.isIntersecting) {
+              en.target.classList.add('in');
+              io.unobserve(en.target);
+            }
+          });
+        },
+        { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+      );
+      document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+      // Count-up stats
+      const counterIO = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((en) => {
+            if (!en.isIntersecting) return;
+            counterIO.unobserve(en.target);
+            const el = en.target;
+            const target = +el.dataset.count;
+            const t0 = performance.now();
+            const tick = (t) => {
+              const p = Math.min((t - t0) / 1200, 1);
+              el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+              if (p < 1) requestAnimationFrame(tick);
+              else el.textContent = target + '+';
+            };
+            requestAnimationFrame(tick);
+          });
+        },
+        { threshold: 0.6 }
+      );
+      document.querySelectorAll('[data-count]').forEach((el) => counterIO.observe(el));
+
+      // passions: on touch devices the first tap opens the card, the second follows the link
+      document.querySelectorAll('.passion-card').forEach((card) => {
+        card.addEventListener('click', (e) => {
+          if (!matchMedia('(hover: none)').matches) return;
+          if (!card.classList.contains('open')) {
+            e.preventDefault();
+            document.querySelectorAll('.passion-card.open').forEach((c) => c.classList.remove('open'));
+            card.classList.add('open');
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

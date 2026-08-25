@@ -1,0 +1,1798 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Glenn: The Game | Glenn Cahill" description="A Game Boy RPG through twenty years of design work — twelve offices, one trophy.">
+  <section class="gq-page">
+    <div class="aurora" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-3"></div>
+    </div>
+
+    <div class="wrap gq-intro">
+      <p class="cs-crumb">Bonus level</p>
+      <h1 class="cs-title">Glenn: The Game</h1>
+      <p class="cs-excerpt">
+I have always had a passion for gaming and I wanted to make a playable CV. Enjoy.
+</p>
+    </div>
+
+    <div class="gameboy">
+      <!-- shell art exported from the Figma replica (node 23:207, 2927x1663);
+           the live canvas sits in the frame's "Game Canvas" rect and invisible
+           hotspots overlay each painted control -->
+      <img class="gb-shell-art" src="/images/game/shell/gba-shell.png" alt="" draggable="false" />
+      <img class="gb-shell-art gb-shell-portrait" src="/images/game/shell/gb-mobile-portrait.png" alt="" draggable="false" />
+      <img class="gb-shell-art gb-shell-landscape" src="/images/game/shell/gb-mobile-landscape.png" alt="" draggable="false" />
+      <img class="gb-shell-art gb-shell-page" src="/images/game/shell/gb-mobile-page.png" alt="" draggable="false" />
+      <div class="gb-screen-window">
+        <canvas id="gq" width="1278" height="864"></canvas>
+      </div>
+      <button class="gb-hot gb-hot-up" data-dir="up" aria-label="Up"></button>
+      <button class="gb-hot gb-hot-down" data-dir="down" aria-label="Down"></button>
+      <button class="gb-hot gb-hot-left" data-dir="left" aria-label="Left"></button>
+      <button class="gb-hot gb-hot-right" data-dir="right" aria-label="Right"></button>
+      <button class="gb-hot" id="gbA" aria-label="A button"></button>
+      <button class="gb-hot" id="gbB" aria-label="B button"></button>
+      <button class="gb-hot" id="gbStart" aria-label="Settings (Start)"></button>
+      <button class="gb-hot" id="gbSelect" aria-label="Fullscreen (Select)"></button>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  @font-face {
+    font-family: 'Tengoku';
+    src: url('/fonts/Tengoku.woff2') format('woff2');
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Press Start 2P';
+    src: url('/fonts/pressstart2p.woff2') format('woff2');
+    font-display: swap;
+  }
+
+  .gq-page {
+    position: relative;
+    overflow: hidden;
+    padding: calc(var(--nav-h) + clamp(40px, 6vw, 80px)) 0 clamp(70px, 9vw, 120px);
+  }
+
+  .gq-page .aurora { opacity: 0.4; }
+  .gq-intro { position: relative; z-index: 2; margin-bottom: clamp(36px, 5vw, 60px); }
+
+  /* the shell: Glenn's Figma replica (node 23:207) as a single exported
+     layer, with the live canvas and invisible control hotspots positioned
+     by the frame's own geometry (2927x1663) */
+  .gameboy {
+    position: relative;
+    z-index: 2;
+    width: min(1300px, calc(100% - 24px));
+    margin-inline: auto;
+    aspect-ratio: 2927 / 1663;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    filter: drop-shadow(0 40px 90px rgba(0, 0, 0, 0.55));
+  }
+
+  .gb-shell-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* the "Game Canvas" rect from the Figma frame: 869.5,326.7 / 1237x837 */
+  .gb-screen-window {
+    position: absolute;
+    left: 29.708%;
+    top: 19.643%;
+    width: 42.262%;
+    height: 50.331%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #gq {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    background: #10102c;
+  }
+
+
+  /* invisible hotspots over the painted controls */
+  .gb-hot {
+    position: absolute;
+    background: transparent;
+    border-radius: 24%;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    cursor: pointer;
+  }
+
+  .gb-hot:active { background: rgba(255, 255, 255, 0.09); }
+
+  .gb-hot-up { left: 13.666%; top: 30.407%; width: 4.373%; height: 7.436%; }
+  .gb-hot-down { left: 13.666%; top: 45.28%; width: 4.373%; height: 7.436%; }
+  .gb-hot-left { left: 9.292%; top: 37.843%; width: 4.373%; height: 7.436%; }
+  .gb-hot-right { left: 18.039%; top: 37.843%; width: 4.373%; height: 7.436%; }
+  #gbA { left: 84.815%; top: 31.008%; width: 8.926%; height: 15.644%; border-radius: 50%; }
+  #gbB { left: 76.957%; top: 36.42%; width: 8.926%; height: 15.644%; border-radius: 50%; }
+  #gbStart { left: 12.979%; top: 58.008%; width: 11.333%; height: 11.1%; border-radius: 999px; }
+  #gbSelect { left: 12.979%; top: 67.509%; width: 11.333%; height: 11.1%; border-radius: 999px; }
+
+  .gb-hint {
+    text-align: center;
+    margin-top: 22px;
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8f87c6;
+  }
+
+  /* ---------- mobile breakpoint: the in-page console is the vertical
+     GlennBoy design, fullscreen or not ---------- */
+  @media (max-width: 700px) and (orientation: portrait) {
+    .gameboy {
+      /* gb-mobile-page.png: the portrait shell with 120px spliced out
+         between screen and controls, so they sit closer together */
+      aspect-ratio: 1626 / 3416;
+      width: 100%;
+      max-width: none;
+      /* crop: trim the forehead above the bezel and below the controls,
+         rounded so the device keeps its corners */
+      clip-path: inset(12.4% 0 13% 0 round 32px);
+      margin-top: -26.1%;
+      margin-bottom: -27.3%;
+    }
+    .gameboy .gb-shell-art { display: none; }
+    .gameboy .gb-shell-page { display: block; }
+    .gameboy .gb-screen-window { left: 11.931%; top: 19.49%; width: 76.076%; height: 24.5%; }
+    .gameboy .gb-hot-up { left: 20.803%; top: 56.94%; width: 9.445%; height: 4.343%; }
+    .gameboy .gb-hot-down { left: 20.803%; top: 65.63%; width: 9.445%; height: 4.343%; }
+    .gameboy .gb-hot-left { left: 11.358%; top: 61.28%; width: 9.445%; height: 4.343%; }
+    .gameboy .gb-hot-right { left: 30.248%; top: 61.28%; width: 9.445%; height: 4.343%; }
+    .gameboy #gbA { left: 71.487%; top: 57.42%; width: 18.72%; height: 8.873%; }
+    .gameboy #gbB { left: 55.008%; top: 60.49%; width: 18.72%; height: 8.873%; }
+    .gameboy #gbStart { left: 30.671%; top: 77.74%; width: 18.184%; height: 3.523%; }
+    .gameboy #gbSelect { left: 51.171%; top: 77.74%; width: 18.184%; height: 3.523%; }
+  }
+
+  /* ---------- fullscreen mode ---------- */
+  .gq-page.gq-full .gq-intro,
+  .gq-page.gq-full .gb-hint { display: none; }
+
+  /* opaque backdrop so the page (nav, footer) never shows behind the shell */
+  .gq-page.gq-full::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    background: #070514;
+  }
+
+  /* the mobile shells only exist on touch devices in fullscreen */
+  .gb-shell-portrait,
+  .gb-shell-landscape,
+  .gb-shell-page { display: none; }
+
+  /* mobile portrait fullscreen: swap to the vertical GlennBoy shell (Figma
+     node 23:285, 1626x3536) and remap the canvas window + control hotspots
+     to that frame's geometry. Desktop and landscape keep the GBA replica. */
+  @media (pointer: coarse) and (orientation: portrait) {
+    .gq-page.gq-full .gameboy {
+      /* NEVER stretch the shell: keep its aspect and fit within the viewport.
+         In true fullscreen this fills edge to edge (phone ratios match the
+         art within 1%); with browser chrome visible it letterboxes on the
+         dark backdrop instead of squashing */
+      aspect-ratio: 1626 / 3536;
+      width: min(100vw, calc(100dvh * (1626 / 3536)));
+      height: auto;
+    }
+    .gq-page.gq-full .gb-shell-art { display: none; }
+    .gq-page.gq-full .gb-shell-portrait { display: block; }
+    .gq-page.gq-full .gb-screen-window { left: 11.931%; top: 18.832%; width: 76.076%; height: 23.671%; }
+    .gq-page.gq-full .gb-hot-up { left: 20.803%; top: 58.401%; width: 9.445%; height: 4.196%; }
+    .gq-page.gq-full .gb-hot-down { left: 20.803%; top: 66.793%; width: 9.445%; height: 4.196%; }
+    .gq-page.gq-full .gb-hot-left { left: 11.358%; top: 62.597%; width: 9.445%; height: 4.196%; }
+    .gq-page.gq-full .gb-hot-right { left: 30.248%; top: 62.597%; width: 9.445%; height: 4.196%; }
+    .gq-page.gq-full #gbA { left: 71.487%; top: 58.864%; width: 18.72%; height: 8.572%; }
+    .gq-page.gq-full #gbB { left: 55.008%; top: 61.829%; width: 18.72%; height: 8.572%; }
+    .gq-page.gq-full #gbStart { left: 30.671%; top: 78.498%; width: 18.184%; height: 3.404%; }
+    .gq-page.gq-full #gbSelect { left: 51.171%; top: 78.498%; width: 18.184%; height: 3.404%; }
+  }
+
+  /* mobile landscape fullscreen: the horizontal GlennBoy shell (Figma node
+     23:388, 3536x1626) — d-pad left, screen centre, A/B right */
+  @media (pointer: coarse) and (orientation: landscape) {
+    .gq-page.gq-full .gameboy {
+      aspect-ratio: 3536 / 1626;
+      width: min(100vw, calc(100dvh * (3536 / 1626)));
+      height: auto;
+    }
+    .gq-page.gq-full .gb-shell-art { display: none; }
+    .gq-page.gq-full .gb-shell-landscape { display: block; }
+    .gq-page.gq-full .gb-screen-window { left: 30.27%; top: 13.71%; width: 39.889%; height: 58.699%; }
+    .gq-page.gq-full .gb-hot-up { left: 12%; top: 23.4%; width: 4.88%; height: 11%; }
+    .gq-page.gq-full .gb-hot-down { left: 12%; top: 45.2%; width: 4.88%; height: 11%; }
+    .gq-page.gq-full .gb-hot-left { left: 7.32%; top: 34.4%; width: 4.88%; height: 11%; }
+    .gq-page.gq-full .gb-hot-right { left: 16.9%; top: 34.4%; width: 4.88%; height: 11%; }
+    .gq-page.gq-full #gbA { left: 86.5%; top: 26.5%; width: 9%; height: 20%; }
+    .gq-page.gq-full #gbB { left: 77.5%; top: 35.5%; width: 9%; height: 20%; }
+    .gq-page.gq-full #gbStart { left: 15.6%; top: 76.5%; width: 9.4%; height: 11.5%; }
+    .gq-page.gq-full #gbSelect { left: 75.2%; top: 76.5%; width: 9.4%; height: 11.5%; }
+  }
+
+  /* the replica scales to fill the screen, centred; landscape fills the
+     height, portrait fills the width */
+  .gq-page.gq-full .gameboy {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    z-index: 9999;
+    clip-path: none;
+    margin: 0;
+    width: min(100vw, calc(100dvh * (2927 / 1663)));
+    max-width: none;
+    margin: 0;
+    filter: none;
+  }
+</style>
+
+<script>
+  // ============================================================
+  // GLENN: THE GAME — top-down career RPG, Game Boy style
+  //
+  // Career-focused release: starts in Career City; office doors read the
+  // jobs directly. Life-era maps below stay dormant behind the west gate.
+  // [EDIT ME] markers = biography placeholders awaiting real facts.
+  //
+  // Map legend:
+  //  . grass   = path    T tree    f flower   w water
+  //  R roof    H wall    D door    S sign     G gate east  g gate west
+  //  # interior wall     C floor   k furniture  M exit mat
+  //  i item    P trophy  b office wall  r office roof
+  // ============================================================
+
+  const PAL = ['#0f380f', '#306230', '#8bac0f', '#9bbc0f']; // world fallback tiles only
+  // UI chrome palette (HUD, dialogs, menus): brand ink violet on lavender
+  // paper, matching the indigo shell. Same index semantics as PAL.
+  const UI = ['#231a4d', '#5b4fae', '#b9aef0', '#ece7ff'];
+  // Viewport 142x96 at 9x internal scale: same 1237x837 shell-window shape as
+  // 213x144, but zoomed 50% so sprites and tiles sit larger on screen
+  const TILE = 16, W = 142, H = 96;
+
+  const JOBS = [
+    { years: '2006-10', company: 'MOOSE INTERNET', blurb: 'JUNIOR DESIGNER — and the only one! Hand-coded HTML, CSS and JS. FLASH sites and banners. GIFs. Print, from business cards to booklets. Everyone starts somewhere.' },
+    { years: '2010-13', company: 'WEBFUSION', blurb: 'GRAPHIC & WEB DESIGNER. Layouts, campaigns, product launches, banner ads. Levelled up to MIDDLEWEIGHT.' },
+    { years: '2013-16', company: 'HEATH WALLACE', blurb: 'SENIOR UI/UX. Big banks joined the party — NATIONWIDE and HSBC. Loan calculators and early iPad experiences.' },
+    { years: '2016', company: 'VOLUME', blurb: 'SENIOR DESIGNER. Wireframes built on content hierarchy. Mentored juniors for bonus XP.' },
+    { years: '2016-21', company: 'HUUMUN', blurb: 'SENIOR UI & MOTION. Five-year quest: healthcare products, a full rebrand, clinical apps shaped by user testing. MOTION DESIGN learned!' },
+    { years: '2021', company: 'BMI GROUP', blurb: 'SENIOR UI. Led the Adobe XD to Figma design system migration. Components rebuilt for scale.' },
+    { years: '2021', company: 'FASTIC', blurb: 'SENIOR UI/UX. Onboarding rebuilt with A/B tests and interviews. Drop-off nearly HALVED. Super effective!' },
+    { years: '2022', company: 'BRITISH GAS', blurb: 'SENIOR PRODUCT DESIGNER. BOOK A REPAIR journeys refined with user mapping. Conversions up.' },
+    { years: '2023-24', company: 'LLOYDS BANKING', blurb: 'DESIGN SYSTEMS LEAD unlocked! Scottish Widows Figma system — one source of truth, plus Storybook and React repo.' },
+    { years: '2024', company: 'CIBC', blurb: 'DESIGN SYSTEM DESIGNER. Sketch to Figma migration, variables system, docs, and team training.' },
+    { years: '2024-25', company: 'THREE MOBILE', blurb: 'DESIGN SYSTEM ENGINEER. Web + app design system on a variables foundation.' },
+    { years: '2025-NOW', company: 'SMARTY MOBILE', blurb: 'DESIGN SYSTEM ENGINEER. Current quest: CLEANSLATE, the design system behind the React Native rebuild.' },
+  ];
+
+  const FINALE = 'You reached the 2026 TROPHY! The next chapter is not written yet... your project could be the next office on this street. glenn@glenncahill.com';
+
+  // ---------- maps ----------
+  const MAPS = {
+    nursery: {
+      age: 0, label: 'THE NURSERY', theme: 'home',
+      intro: 'A new player has joined the game! BABY GLENN wakes in the nursery. [EDIT ME: year + place of birth]. Find the way outside!',
+      rows: [
+        '############',
+        '#kk.....kk.#',
+        '#..........#',
+        '#..i.......#',
+        '#.......S..#',
+        '#..........#',
+        '#kk........#',
+        '#.....M....#',
+        '############',
+      ],
+      items: { '3,3': 'RATTLE' },
+      signs: { '8,4': 'The cot has bars. This is basically a tutorial level.' },
+      warps: { '6,7': { to: 'babytown', x: 34, y: 11 } },
+    },
+
+    babytown: {
+      age: 0, label: 'THE BEGINNING', artScale: 6,
+      intro: 'A new player has joined the game! BABY GLENN, fresh from the hospital. [EDIT ME: year + place of birth]. Home is the big house to the east. Find the toys on the way!',
+      rows: [
+        'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
+        'TTTTTTTTTTTTTT...............TTTTTTTTTTTTTT......T',
+        'TTTTTTTTTTTTTT...............TTTTTTTTTTTTTT......T',
+        'TTTTTTTTTTTTTT...............TTTTTTTTTTTTTT......T',
+        'TTTTTTTTTTTTTT...............TTTTTTTTTTTTTT......T',
+        'TTTTTTTTTTTTTT...............TTTTTTTTTTTTTT......T',
+        'TTTTTTTTTTTTTT...............TTTTTTTTTTTTTT......T',
+        'T..................TTT.......TTTTTTTTTTTTTT......T',
+        'T...................i........TTTTTTTTTTTTTT......T',
+        'T............................TTTTTTTTTTTTTT.i....T',
+        'T.....i...........................D..D...........T',
+        'T................................................G',
+        'T................................................G',
+        'T................................................G',
+        'T................................................T',
+        'T................................................T',
+        'T................................................T',
+        'T................................................T',
+        'T................................................T',
+        'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
+      ],
+      items: { '20,8': 'RATTLE', '6,10': 'TEDDY', '44,9': 'BLOCKS' },
+      signs: {},
+      warps: {
+        '34,10': { to: 'nursery', x: 6, y: 6 },
+        '37,10': { to: 'nursery', x: 6, y: 6 },
+        '49,11': { to: 'gardentown', x: 1, y: 5, levelUp: 'TODDLER ERA', intro2: 'LEVEL UP! First steps unlocked. TODDLER GLENN can walk now. Everything within reach is in danger.' },
+        '49,12': { to: 'gardentown', x: 1, y: 5, levelUp: 'TODDLER ERA', intro2: 'LEVEL UP! First steps unlocked. TODDLER GLENN can walk now. Everything within reach is in danger.' },
+        '49,13': { to: 'gardentown', x: 1, y: 5, levelUp: 'TODDLER ERA', intro2: 'LEVEL UP! First steps unlocked. TODDLER GLENN can walk now. Everything within reach is in danger.' },
+      },
+    },
+
+    gardentown: {
+      age: 1, label: 'GARDEN GREEN',
+      intro: null,
+      rows: [
+        'TTTTTTTTTTTTTTTTTTTT',
+        'T..f...ww....RRR...T',
+        'T......ww....HDH...T',
+        'T.i...........=....T',
+        'T...TT..S...===....T',
+        'g============......T',
+        'T.....f...====.....T',
+        'T..TT.....=....i...T',
+        'T....f....=========G',
+        'TTTTTTTTTTTTTTTTTTTT',
+      ],
+      items: { '2,3': 'CRAYONS', '15,7': 'TOY CAR' },
+      signs: { '8,4': 'GARDEN GREEN. Please do not eat the flowers. Again.' },
+      warps: {
+        '0,5': { to: 'babytown', x: 47, y: 12 },
+        '14,2': { to: 'gardenhouse', x: 6, y: 6 },
+        '19,8': { to: 'schooltown', x: 1, y: 4, levelUp: 'CHILD ERA', intro2: 'LEVEL UP! CHILD GLENN discovered drawing... and sticker books. (True story — see the Euro 2020 project.)' },
+      },
+    },
+
+    gardenhouse: {
+      age: 1, label: 'HOME', theme: 'home',
+      intro: null,
+      rows: [
+        '############',
+        '#kk......kk#',
+        '#..........#',
+        '#...S......#',
+        '#......i...#',
+        '#..........#',
+        '#kk........#',
+        '#.....M....#',
+        '############',
+      ],
+      items: { '7,4': 'PICTURE BOOK' },
+      signs: { '4,3': 'Home. The crayon marks on this wall are early works. Very rare.' },
+      warps: { '6,7': { to: 'gardentown', x: 13, y: 3 } },
+    },
+
+    schooltown: {
+      age: 2, label: 'SCHOOLVILLE',
+      intro: null,
+      rows: [
+        'TTTTTTTTTTTTTTTTTTTT',
+        'T...RRRRR....f.....T',
+        'T...HHDHH.......TT.T',
+        'T.....=......i.....T',
+        'g======..S.........T',
+        'T.....==========...T',
+        'T..f...i...TT..=...T',
+        'T.TT...........====G',
+        'T........f.........T',
+        'TTTTTTTTTTTTTTTTTTTT',
+      ],
+      items: { '13,3': 'STICKER BOOK', '7,6': 'GAME BOY' },
+      signs: { '9,4': 'SCHOOLVILLE. Maths homework: missing. Margin doodles: excellent.' },
+      warps: {
+        '0,4': { to: 'gardentown', x: 18, y: 8 },
+        '6,2': { to: 'school', x: 6, y: 6 },
+        '19,7': { to: 'teentown', x: 1, y: 6, levelUp: 'TEENAGE ERA', intro2: 'LEVEL UP! TEEN GLENN chose the creative path. Art supplies and games consume all pocket money. [EDIT ME: real teen hobbies]' },
+      },
+    },
+
+    school: {
+      age: 2, label: 'SCHOOL', theme: 'office',
+      intro: null,
+      rows: [
+        '############',
+        '#kk.kk.kk..#',
+        '#..........#',
+        '#kk.kk.kk..#',
+        '#.......S..#',
+        '#..i.......#',
+        '#..........#',
+        '#.....M....#',
+        '############',
+      ],
+      items: { '3,5': 'PENCILS' },
+      signs: { '8,4': 'Report card: "Draws on everything." Correct.' },
+      warps: { '6,7': { to: 'schooltown', x: 6, y: 3 } },
+    },
+
+    teentown: {
+      age: 3, label: 'TEEN TOWN',
+      intro: null,
+      rows: [
+        'TTTTTTTTTTTTTTTTTTTT',
+        'T..f.....RRR....TT.T',
+        'T........HDH.......T',
+        'T..TT.....=....i...T',
+        'T.........=..TT....T',
+        'T....S....=........T',
+        'g==========........T',
+        'T......============G',
+        'T..f.......TT....f.T',
+        'TTTTTTTTTTTTTTTTTTTT',
+      ],
+      items: { '15,3': 'CD PLAYER' },
+      signs: { '5,5': 'TEEN TOWN. Volume: loud. Bedroom door: closed.' },
+      warps: {
+        '0,6': { to: 'schooltown', x: 18, y: 7 },
+        '10,2': { to: 'teenroom', x: 6, y: 6 },
+        '19,7': { to: 'careercity', x: 1, y: 7, levelUp: 'ADULT ERA', intro2: 'LEVEL UP! ADULT GLENN arrives in CAREER CITY. Twelve offices. Twenty years. Knock on the doors to log each job!' },
+      },
+    },
+
+    teenroom: {
+      age: 3, label: 'THE BEDROOM', theme: 'home',
+      intro: null,
+      rows: [
+        '############',
+        '#kkkk...kk.#',
+        '#..........#',
+        '#..S...i...#',
+        '#..........#',
+        '#.......kk.#',
+        '#..........#',
+        '#.....M....#',
+        '############',
+      ],
+      items: { '7,3': 'SKETCHPAD' },
+      signs: { '3,3': 'A shrine of consoles, sketchpads and CDs. Historians call this "the origin story".' },
+      warps: { '6,7': { to: 'teentown', x: 10, y: 3 } },
+    },
+
+    careercity: {
+      age: 4, label: 'CAREER CITY',
+      intro: 'Welcome to CAREER CITY! One long street, twenty years of design work. Knock on the doors to log the jobs. The newest office at the far end is SMARTY HQ... that chapter is happening right now.',
+      rows: [
+        'T.wHHHHHww..HHHHH.HHHHH..HHHHH..HHHHH..HHHHHHHHHHHH..HHHHHHHHHHHHHHHHHH....H..........H.HHHHH..HHHHHHHHHH..T...',
+        'T.wHHHHHww..HHHHH.HHHHH..HHHHH..HHHHH..HHHHHHHHHHHH..HHHHHHHHHHHHHHHHHH....H..........H.HHHHH..HHHHHHHHHH..T...',
+        'T.wHHHHHww..HHHHH.HHHHH..HHHHH..HHHHH..HHHHHHHHHHHH......HHHHHHHHHHHHHH....H..........H.HHHHH..HHHHHHHHHH..T...',
+        'T.wHHHHHww..HHHHH.HHHHH..HHHHH..HHHHH..HHHHHHHHHHHH......HHHHHHHHHHHHHH....H..i.......H.HHHHH..HHHHHHHHHH..T...',
+        'T..HHHHH....HHHHH.HHHHH..HHHHH..HHHHH..HHHHHHHHHHHH.T....HHHHHHHHHHHHHH....H..........H.HHHHHkkHHHHHHHHHH..T...',
+        'T..HDHHH....HHHDHTHDHHHTTHHDHHSTHHDHH..HHDHHHHHHDHH.T....HHHHDHHHHHDHHH....H..........H.HHHDHkkHHDHHHHDHH..T...',
+        'T..S=....TTi..S=...=STT...S=...i.S=.S...k=S.kk.S=...T..TTTTTT=S...S=....TT.TTTTT==TTTTT.TTT=S...S=...S=..TTT...',
+        'S=============================================================================================================S',
+        '.k..kk..kkkk....kk...i..............wwwwww....i........i.kk..kk.i.............kk..kk...i......i....i...........',
+        '.k.i.....................kk.kk......wwwwwwwwwww...kkkk................kk.kk.............TTTTTTTTTTTTTTTTTTTTTTT',
+        'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
+        'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
+      ],
+      items: {
+        '3,9': { img: 'gameboy', name: 'GAME BOY', text: 'The machine that started the whole pixel obsession. Somebody left it on a bench with two bars of battery. Finders keepers.' },
+        '11,6': { img: 'headphones', name: 'HEADPHONES', text: 'Standard designer survival gear. Blocks out open-plan offices, Slack pings and doubt.' },
+        '21,8': { img: 'apple_watch', name: 'APPLE WATCH', text: 'Stand up! Breathe! Ship the design system! The wrist never stops coaching.' },
+        '31,6': { img: 'macbook_pro', name: 'MACBOOK PRO', text: 'Twenty years of pixels have passed through machines like this. This one still smells of deadline.' },
+        '46,8': { img: 'playstation_controller', name: 'PS CONTROLLER', text: 'Design by day, ranked by night. Analogue sticks have fixed more creative blocks than any meeting.' },
+        '55,8': { img: 'water_bottle', name: 'WATER BOTTLE', text: '+10 HYDRATION. The most underrated stat in the game. Refill between meetings.' },
+        '64,8': { img: 'notebook', name: 'NOTEBOOK', text: 'Every project starts here. Half sketches, half todo lists, all coffee stains.' },
+        '78,3': { img: 'mouse', name: 'MOUSE', text: 'Thousands of scrolled miles on the clock. Found courtside, slightly sweaty.' },
+        '87,8': { img: 'keyboard', name: 'KEYBOARD', text: 'Mechanical, obviously. The clack is fifty percent of the productivity.' },
+        '94,8': { img: 'apple_pencil', name: 'APPLE PENCIL', text: 'For sketching ideas before the pixels get precious. Lives in a bag pocket. Always slightly lost.' },
+        '99,8': { img: 'iPhone', name: 'IPHONE', text: 'The device that made every design a mobile first design. 47 unread notifications included.' },
+      },
+      signs: {
+        '3,6': 'MOOSE INTERNET SERVICES. Est. 2006. Every career starts with a door like this one.',
+        '14,6': 'WEBFUSION. Home of 123-reg. Middleweight designers welcome.',
+        '20,6': 'HEATH WALLACE. Banking design HQ. Please knock, the banks are busy.',
+        '26,6': 'VOLUME TOWERS. Content first, wireframes second.',
+        '33,6': 'HUUMUN HOUSE. Healthcare design, five floors of it.',
+        '36,6': 'PHARMIWEB SOLUTIONS. Now trading as HUUMUN. Same building, new name, better logo.',
+        '30,5': 'What a load of rubbish!',
+        '42,6': 'BMI GROUP. Short stays welcome. One month minimum.',
+        '47,6': 'FASTIC. The fasting app people. The vending machine is decorative.',
+        '62,6': 'CENTRICA. BRITISH GAS. Repairs booked here, journeys refined daily.',
+        '66,6': 'LLOYDS BANKING GROUP. Scottish Widows dept. Eighteen libraries went in, one system came out.',
+        '92,6': 'CIBC. Canadian banking, UK design system. Sketch checked in, Figma checked out.',
+        '96,6': 'THREE MOBILE. Design system engineering. Signal excellent.',
+        '101,6': 'SMARTY HQ. Freshly built. The current chapter is being written inside.',
+        '0,7': 'WEST: the story of how GLENN got here. Under construction, the childhood eras are coming soon!',
+        '110,7': 'EAST: the street ends here... for now. Every new project adds another door.',
+      },
+      // free-standing scenery, y-sorted against the player. cx/bottom are the
+      // visible content anchor in art px, measured by diffing the layout plan.
+      props: [
+        { img: 'bench', cx: 240, bottom: 432 },
+        { img: 'big_tree', cx: 462, bottom: 336 },
+        { img: 'bench', cx: 432, bottom: 432 },
+        { img: 'bench', cx: 528, bottom: 432 },
+        { img: 'bench', cx: 816, bottom: 432 },
+        { img: 'sunflowers', cx: 840, bottom: 290 },
+        { img: 'plant_pots', cx: 1056, bottom: 310 },
+        { img: 'tree_row', cx: 1153.5, bottom: 285 },
+        { img: 'picnic_w_items', cx: 1248, bottom: 467 },
+        { img: 'picnic_no_items', cx: 1392, bottom: 467 },
+        { img: 'rubbish', cx: 1462, bottom: 288 },
+        { img: 'medium_tree', cx: 1520, bottom: 288 },
+        { img: 'picnic_no_items', cx: 2448, bottom: 467 },
+        { img: 'picnic_w_items', cx: 2544, bottom: 467 },
+        { img: 'bench', cx: 2784, bottom: 432 },
+        { img: 'bench', cx: 2976, bottom: 432 },
+        { img: 'picnic_no_items', cx: 3408, bottom: 467 },
+        { img: 'picnic_no_items', cx: 3552, bottom: 467 },
+        { img: 'big_tree_with_swing', cx: 3493.5, bottom: 336 },
+        { img: 'basketball', cx: 3865, bottom: 227 },
+        { img: 'bench', cx: 3792, bottom: 432 },
+        { img: 'bench', cx: 3984, bottom: 432 },
+        { img: 'watering_can', cx: 1943.5, bottom: 323 },
+        { img: 'bench', cx: 2160, bottom: 336 },
+        { img: 'tree_row', cx: 2689.5, bottom: 333 },
+        { img: 'tree_row', cx: 5089.5, bottom: 333 },
+      ],
+      warps: {
+        '4,5': { job: 0 },
+        '15,5': { job: 1 },
+        '19,5': { job: 2 },
+        '27,5': { job: 3 },
+        '34,5': { job: 4 },
+        '41,5': { job: 5 },
+        '48,5': { job: 6 },
+        '61,5': { job: 7 },
+        '67,5': { job: 8 },
+        '91,5': { job: 9 },
+        '97,5': { job: 10 },
+        '102,5': { job: 11 },
+      },
+    },
+
+    office: {
+      age: 4, label: 'OFFICE', template: true, theme: 'office',
+      intro: null,
+      rows: [
+        '############',
+        '#kk..S..kk.#',
+        '#..........#',
+        '#..........#',
+        '#kk.....kk.#',
+        '#..........#',
+        '#..........#',
+        '#.....M....#',
+        '############',
+      ],
+      items: {},
+      signs: {},
+      warps: { '6,7': { to: 'careercity', back: true } },
+    },
+  };
+
+  // collectable census: object-valued items are the trackable set
+  const COLLECT_TOTAL = Object.values(MAPS).reduce(
+    (n, m2) => n + Object.values(m2.items || {}).filter((v) => typeof v === 'object').length, 0);
+  const collectGot = () => {
+    let n = 0;
+    for (const [id2, m2] of Object.entries(MAPS)) {
+      for (const k of Object.keys(m2.items || {})) {
+        if (typeof m2.items[k] === 'object' && toysGot.has(`${id2}:${k}`)) n++;
+      }
+    }
+    return n;
+  };
+
+  const SOLID_CHARS = new Set(['T', 'R', 'H', 'D', 'S', '#', 'k', 'w', 'b', 'r', 'P']);
+  const WALK_TRIGGER = new Set(['G', 'g', 'M']);
+
+  // ---------- sprites (procedural fallbacks) ----------
+  const SPRITES = {
+    0: {
+      down: [
+        ['................','................','.....00000......','....0222220.....','....02D2D20.....','....0222220.....','.....00000......','....0333330.....','...033333330....','...033333330....','....0333330.....','.....02.20......','.....00.00......','................','................','................'],
+        ['................','................','.....00000......','....0222220.....','....02D2D20.....','....0222220.....','.....00000......','....0333330.....','...033333330....','...033333330....','....0333330.....','....02...20.....','....00...00.....','................','................','................'],
+      ],
+      up: [
+        ['................','................','.....00000......','....0222220.....','....0222220.....','....0222220.....','.....00000......','....0333330.....','...033333330....','...033333330....','....0333330.....','.....02.20......','.....00.00......','................','................','................'],
+        ['................','................','.....00000......','....0222220.....','....0222220.....','....0222220.....','.....00000......','....0333330.....','...033333330....','...033333330....','....0333330.....','....02...20.....','....00...00.....','................','................','................'],
+      ],
+      side: [
+        ['................','................','.....00000......','....0222220.....','....022D220.....','....0222220.....','.....00000......','....0333330.....','....0333330.....','...033333330....','....0333330.....','.....02.20......','.....00.00......','................','................','................'],
+        ['................','................','.....00000......','....0222220.....','....022D220.....','....0222220.....','.....00000......','....0333330.....','....0333330.....','...033333330....','....0333330.....','....02...20.....','....00...00.....','................','................','................'],
+      ],
+    },
+    4: {
+      down: [
+        ['.....00000......','....0222220.....','....02D2D20.....','....0222220.....','....00222000....','.....00000......','....0111110.....','...011111110....','..02111111120...','..02111111120...','....0111110.....','....0111110.....','.....00.00......','.....00.00......','.....00.00......','................'],
+        ['.....00000......','....0222220.....','....02D2D20.....','....0222220.....','....00222000....','.....00000......','....0111110.....','...011111110....','..02111111120...','..02111111120...','....0111110.....','....0111110.....','....00...00.....','....00...00.....','....00...00.....','................'],
+      ],
+      up: [
+        ['.....00000......','....0222220.....','....0222220.....','....0222220.....','....0222220.....','.....00000......','....0111110.....','...011111110....','..02111111120...','..02111111120...','....0111110.....','....0111110.....','.....00.00......','.....00.00......','.....00.00......','................'],
+        ['.....00000......','....0222220.....','....0222220.....','....0222220.....','....0222220.....','.....00000......','....0111110.....','...011111110....','..02111111120...','..02111111120...','....0111110.....','....0111110.....','....00...00.....','....00...00.....','....00...00.....','................'],
+      ],
+      side: [
+        ['.....00000......','....0222220.....','....022D2200....','....0222220.....','....00222200....','.....000000.....','....0111110.....','....0111110.....','...021111120....','...021111120....','....0111110.....','....0111110.....','.....02.20......','.....02.20......','.....00.00......','................'],
+        ['.....00000......','....0222220.....','....022D2200....','....0222220.....','....00222200....','.....000000.....','....0111110.....','....0111110.....','...021111120....','...021111120....','....0111110.....','....0111110.....','....02...20.....','....02...20.....','....00...00.....','................'],
+      ],
+    },
+  };
+  SPRITES[1] = SPRITES[0];
+  SPRITES[2] = SPRITES[0];
+  SPRITES[3] = SPRITES[4];
+
+  const ICONS = {
+    'RATTLE':       ['..000...','.02220..','.02220..','..000...','...0....','...0....','..000...','........'],
+    'TEDDY':        ['.0..0...','0220220.','.02220..','.0D2D0..','..000...','.02220..','.0.00.0.','..0..0..'],
+    'BLOCKS':       ['........','.0000...','.0220...','.0000000','.0000220','....0220','....0000','........'],
+    'CRAYONS':      ['......0.','.....02.','....020.','...020..','..020...','.020....','.00.....','0.......'],
+    'PICTURE BOOK': ['........','00000000','02222220','02022020','02222220','02022020','00000000','........'],
+    'TOY CAR':      ['........','........','..0000..','.022220.','00000000','02222220','.0.00.0.','..0..0..'],
+    'STICKER BOOK': ['........','00000000','02222220','020D2020','02222220','02220D20','00000000','........'],
+    'PENCILS':      ['...0.0..','...020..','..02020.','..02020.','..02020.','..02020.','..00000.','........'],
+    'GAME BOY':     ['.000000.','.033330.','.030030.','.033330.','.020202.','.022220.','.000000.','........'],
+    'SKETCHPAD':    ['........','.000000.','.033330.','.030330.','.033030.','.033330.','.000000.','........'],
+    'CD PLAYER':    ['........','.000000.','0033330.','0330330.','0303030.','0330330.','0033330.','.000000.'],
+    'COFFEE':       ['..0.0...','.0.0.0..','........','.000000.','.023320.','.023320.','.022220.','..0000..'],
+  };
+
+  const canvas = document.getElementById('gq');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  // 6x internal resolution: world logic stays 160x144, art gets 960x864 real pixels.
+  // 48px sprite frames render at exactly 4x inside their 2-tile slot — integer scale.
+  ctx.scale(9, 9);
+
+  // pixel font for all in-game text (falls back to monospace until loaded)
+  const PXFONT = '"Tengoku", "Press Start 2P", monospace';
+  // UI text size. Tengoku caps fill 83% of the em, so 6px here lands the
+  // visible letter height where the old PS2P text sat.
+  const FS = 6;
+  try {
+    const pxf = new FontFace('Tengoku', 'url(/fonts/Tengoku.woff2)');
+    pxf.load().then((f) => document.fonts.add(f)).catch(() => {});
+    const ps2p = new FontFace('Press Start 2P', 'url(/fonts/pressstart2p.woff2)');
+    ps2p.load().then((f) => document.fonts.add(f)).catch(() => {});
+  } catch {}
+
+  // Character sheets. Full Memao sheets (8 cols x N rows of 48x48 frames):
+  // two 4-frame animations per row (cols 0-3 and 4-7).
+  const memao = (src) => ({
+    src,
+    fw: 48, fh: 48, frames: 4,
+    walk: { down: { r: 2, c: 0 }, up: { r: 3, c: 0 }, side: { r: 3, c: 4 } },
+    idle: { down: { r: 0, c: 0 }, up: { r: 0, c: 4 }, side: { r: 1, c: 0 } },
+    sideFaces: 'left',
+  });
+  const SHEET_CONFIG = {
+    0: memao('/images/game/glenn_baby.png'),
+    1: memao('/images/game/glenn_toddler.png'),
+    2: memao('/images/game/glenn_child.png'),
+    3: memao('/images/game/glenn_teen.png'),
+    4: memao('/images/game/glenn_adult.png'),
+  };
+  const SHEETS = {};
+  for (let age = 0; age <= 4; age++) {
+    const img = new Image();
+    img.onload = () => { SHEETS[age] = img; };
+    img.src = SHEET_CONFIG[age] ? SHEET_CONFIG[age].src : `/images/game/player-${age}.png`;
+  }
+  const FRAME_INDEX = { down: [0, 1], up: [2, 3], side: [4, 5] };
+
+  // ---------- tileset art (LimeZu packs; 48px tiles → drawn 2x) ----------
+  const TS = {};
+  [
+    ['serene', '/images/game/tiles/serene.png'],
+    ['room', '/images/game/tiles/Room_Builder_free_48x48.png'],
+    ['fur', '/images/game/tiles/Interiors_free_48x48.png'],
+  ].forEach(([k, src]) => {
+    const i = new Image();
+    i.onload = () => { TS[k] = i; };
+    i.src = src;
+  });
+
+  const A = (s, x, y) => ({ s, x, y });
+  const TILE_ART = {
+    outdoor: {
+      base: A('serene', 3, 0),          // plain grass
+      '=': A('serene', 6, 1), 'G': A('serene', 6, 1), 'g': A('serene', 6, 1),
+      'w': A('serene', 11, 1),
+      'f': A('serene', 2, 12),
+      'T': A('serene', 9, 10),          // tree hedge canopy
+      'S': A('serene', 7, 13),
+      'R': A('serene', 2, 25), 'H': A('serene', 1, 24), 'D': A('serene', 1, 23),
+      'r': A('serene', 2, 41), 'b': A('serene', 2, 39),
+    },
+    home: {
+      base: A('room', 9, 14),           // herringbone floor
+      '#': A('room', 1, 12),            // wood wall
+      'k': A('fur', 4, 15),             // bookshelf
+      'M': A('room', 9, 5),             // brick mat
+      'S': A('serene', 7, 13),
+    },
+    office: {
+      base: A('room', 10, 11),          // grey floor
+      '#': A('room', 1, 18),            // blue wall
+      'k': A('fur', 1, 11),             // desk/table
+      'M': A('room', 9, 5),
+      'S': A('serene', 7, 13),
+    },
+  };
+
+  // Hand-painted map art: drop /images/game/maps/<mapId>.png and it replaces
+  // the tile renderer for that map. artScale = source px per logical px.
+  const MAP_IMG = {};
+  Object.keys(MAPS).forEach((id) => {
+    const img = new Image();
+    img.onload = () => { MAP_IMG[id] = img; };
+    img.src = `/images/game/maps/${id}.png`;
+  });
+
+  // collectable sprites (48px-art scale, drawn at /3 like the painted maps)
+  const COLLECT_IMG = {};
+  ['gameboy', 'headphones', 'macbook_pro', 'water_bottle', 'playstation_controller', 'iPhone', 'apple_watch', 'apple_pencil', 'keyboard', 'mouse', 'notebook'].forEach((id) => {
+    const img = new Image();
+    img.onload = () => { COLLECT_IMG[id] = img; };
+    img.src = `/images/game/collectables/${id}.png`;
+  });
+
+  // walk-behind scenery sprites; missing files are skipped (art stays baked
+  // into the map painting until Glenn exports each prop)
+  const PROP_IMG = {};
+  // per-sprite visible-content anchors (centre-x / bottom, in sprite px):
+  // props are placed by where their feet touch the ground, trim-proof
+  const PROP_META = {
+    bench: { ccx: 48, cb: 48 },
+    big_tree: { ccx: 126, cb: 192 },
+    medium_tree: { ccx: 72, cb: 192 },
+    picnic_no_items: { ccx: 48, cb: 84 },
+    picnic_w_items: { ccx: 48, cb: 84 },
+    plant_pots: { ccx: 48, cb: 70 },
+    rubbish: { ccx: 26, cb: 91 },
+    sunflowers: { ccx: 25, cb: 98 },
+    tree_row: { ccx: 49, cb: 286 },
+    basketball: { ccx: 25, cb: 37 },
+    big_tree_with_swing: { ccx: 134, cb: 240 },
+    graffiti: { ccx: 48.5, cb: 71 },
+    watering_can: { ccx: 23.5, cb: 36 },
+  };
+  Object.keys(PROP_META).forEach((id) => {
+    const img = new Image();
+    img.onload = () => { PROP_IMG[id] = img; };
+    img.src = `/images/game/props/${id}.png`;
+  });
+
+  // title screen frames from the Figma design: PRESS A lit / unlit
+  const TITLE_IMG = [];
+  [1, 2].forEach((n) => {
+    const img = new Image();
+    img.onload = () => { TITLE_IMG[n - 1] = img; };
+    img.src = `/images/game/title-${n}.png`;
+  });
+
+  // backpack cutscene: one sheet, three square frames (closed / half / open)
+  let BAG_SHEET = null;
+  {
+    const img = new Image();
+    img.onload = () => { BAG_SHEET = img; };
+    img.src = '/images/game/bag.png';
+  }
+  // collection cutscene state: bag slides in, unzips, item flies in, zips, leaves
+  let bagScene = null;
+  let pendingDialog = null;
+  let backpackPulse = 0;
+
+  const blit = (art, px, py) => {
+    const img = TS[art.s];
+    if (!img) return false;
+    ctx.drawImage(img, art.x * 48, art.y * 48, 48, 48, px, py, 16, 16);
+    return true;
+  };
+
+  const drawTileArt = (ch, px, py, theme, override) => {
+    const set = TILE_ART[theme];
+    if (!set || !TS[set.base.s]) return false;
+    blit(set.base, px, py);
+    const art = (override && override[ch]) || set[ch];
+    if (art && art !== set.base) {
+      if (!blit(art, px, py)) return false;
+    }
+    if (ch === 'P') {
+      ctx.fillStyle = '#c9a227';
+      ctx.fillRect(px + 4, py + 2, 8, 6); ctx.fillRect(px + 6, py + 8, 4, 3);
+      ctx.fillStyle = '#8a6d1d'; ctx.fillRect(px + 3, py + 11, 10, 3);
+      ctx.fillStyle = '#ffe9a8'; ctx.fillRect(px + 6, py + 3, 2, 3);
+    }
+    return true;
+  };
+
+  const CHAR_COL = { '0': 0, '1': 1, '2': 2, '3': 3, 'D': 0 };
+
+  const drawGrid = (rows, px, py, flip, size) => {
+    for (let y = 0; y < rows.length; y++) {
+      const row = rows[y];
+      if (!row) continue;
+      for (let x = 0; x < size; x++) {
+        const ch = row[flip ? size - 1 - x : x];
+        if (!ch || ch === '.' || ch === ' ') continue;
+        const col = CHAR_COL[ch];
+        if (col === undefined) continue;
+        ctx.fillStyle = PAL[col];
+        ctx.fillRect(Math.round(px) + x, Math.round(py) + y, 1, 1);
+      }
+    }
+  };
+
+  // ---------- state ----------
+  // Career-focused release: the game starts in Career City. The life-era maps
+  // stay defined above, dormant behind the west gate, for the full version later.
+  let mapId = 'careercity';
+  let officeJob = null;
+  const player = { x: 2, y: 7, px: 2 * TILE, py: 7 * TILE, dir: 'right', moving: false };
+  let mode = 'title'; // title | play | dialog | banner
+  let dialog = null, banner = null, toast = null;
+  let tick = 0;
+  const toysGot = new Set();
+  const jobsRead = new Set();
+  const introSeen = new Set();
+
+  const mapDef = () => MAPS[mapId];
+  const rows = () => mapDef().rows;
+  const mapW = () => rows()[0].length;
+  const mapH = () => rows().length;
+  const tileAt = (x, y) => (rows()[y] && rows()[y][x]) || 'T';
+
+  // ---------- settings / audio ----------
+  const settings = (() => {
+    const defaults = { music: true, sfx: true, musicVol: 30, sfxVol: 70 };
+    try { return { ...defaults, ...JSON.parse(localStorage.getItem('gq-settings') || '{}') }; }
+    catch { return defaults; }
+  })();
+  const saveSettings = () => { try { localStorage.setItem('gq-settings', JSON.stringify(settings)); } catch {} };
+
+  const music = new Audio('/audio/game-music.mp3');
+  music.loop = true;
+  // the quiet level is baked into game-music.mp3 itself (re-encoded at the
+  // previously-trimmed loudness), so the volume slider gets its full range
+  const MUSIC_TRIM = 1;
+  music.volume = (settings.musicVol / 100) * MUSIC_TRIM;
+  music.preload = 'auto';
+  const syncMusic = () => {
+    if (settings.music && mode !== 'title') music.play().catch(() => {});
+    else music.pause();
+  };
+
+  let ac = null;
+  const blip = (freq = 880, dur = 0.05, vol = 0.04) => {
+    if (!settings.sfx) return;
+    vol *= settings.sfxVol / 70; // 70 = the tuned default loudness
+    if (vol <= 0) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'square'; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(); o.stop(ac.currentTime + dur);
+    } catch {}
+  };
+  const jingle = () => { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => blip(f, 0.09, 0.05), i * 90)); };
+
+  // ---------- dialog ----------
+  // wrap by measured pixel width: Tengoku is proportional, so counting
+  // characters left lines well short of the box edge
+  const wrapText = (text, maxPx) => {
+    ctx.font = `${FS}px ${PXFONT}`;
+    const words = text.split(' ');
+    const lines = []; let line = '';
+    for (const w of words) {
+      const candidate = (line + ' ' + w).trim();
+      if (line && ctx.measureText(candidate).width > maxPx) { lines.push(line.trim()); line = w; }
+      else line = candidate;
+    }
+    if (line.trim()) lines.push(line.trim());
+    return lines;
+  };
+  // usable dialog text width: box spans 2..W-2, text starts x11, rail ends W-6
+  const DIALOG_TEXT_W = W - 11 - 8;
+
+  const openDialog = (title, body) => {
+    // 26 chars max at 16/3 px per glyph inside the 148px dialog; titles wrap too
+    const lines = title ? [...wrapText(title, DIALOG_TEXT_W), ...wrapText(body, DIALOG_TEXT_W)] : wrapText(body, DIALOG_TEXT_W);
+    const pages = [];
+    for (let i = 0; i < lines.length; i += 4) pages.push(lines.slice(i, i + 4));
+    dialog = { pages, page: 0, chars: 0 };
+    mode = 'dialog';
+    blip(660);
+  };
+
+  const advanceDialog = () => {
+    const pageText = dialog.pages[dialog.page].join('\n');
+    if (dialog.chars < pageText.length) { dialog.chars = pageText.length; return; }
+    if (dialog.page < dialog.pages.length - 1) { dialog.page++; dialog.chars = 0; blip(720); }
+    else closeDialog(520);
+  };
+
+  // ---------- warping ----------
+  let lastCityDoor = { x: 3, y: 3 };
+
+  const warpTo = (warp, fromX, fromY) => {
+    if (!warp) return;
+    if (warp.note) { openDialog(null, warp.note); return; }
+    if (warp.job !== undefined) {
+      // no office interiors: the door tells you the job right here
+      const j = JOBS[warp.job];
+      jobsRead.add(warp.job);
+      openDialog(`${j.years} ${j.company}`, j.blurb);
+      return;
+    }
+    if (!warp.to && !warp.back) return;
+    const target = warp.back ? { to: 'careercity', x: lastCityDoor.x, y: lastCityDoor.y } : warp;
+    mapId = target.to;
+    player.x = target.x; player.y = target.y;
+    player.px = player.x * TILE; player.py = player.y * TILE;
+    player.moving = false;
+    blip(392, 0.08);
+
+    if (warp.levelUp) {
+      jingle();
+      banner = { text: warp.levelUp, t: 80, intro2: warp.intro2 };
+      mode = 'banner';
+      return;
+    }
+    const def = mapDef();
+    if (def.intro && !introSeen.has(mapId)) {
+      introSeen.add(mapId);
+      setTimeout(() => openDialog(`= ${def.label} =`, def.intro), 60);
+    }
+  };
+
+  // ---------- input ----------
+  const held = { up: false, down: false, left: false, right: false };
+  const keymap = {
+    ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+    w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right',
+  };
+
+  const closeDialog = (freq) => {
+    dialog = null; mode = 'play';
+    if (freq) blip(freq);
+    if (pendingDialog) {
+      const p = pendingDialog;
+      pendingDialog = null;
+      openDialog(p.title, p.body);
+    }
+  };
+
+  // ---------- interaction ----------
+  const bumpTile = (tx, ty) => {
+    const t = tileAt(tx, ty);
+    const key = `${tx},${ty}`;
+    const def = mapDef();
+    if (t === 'D') {
+      const warp = def.warps[key];
+      if (warp) { lastCityDoor = { x: player.x, y: player.y }; warpTo(warp, player.x, player.y); }
+      return true;
+    }
+    if (t === 'S' && def.signs[key]) { blip(660); openDialog(null, def.signs[key]); return true; }
+    if (t === 'P') { jingle(); openDialog('= 2026 =', FINALE); return true; }
+    return false;
+  };
+
+  const pressA = () => {
+    if (mode === 'title') {
+      mode = 'play'; blip(880);
+      syncMusic(); // user gesture: music may start now
+      const def = mapDef();
+      introSeen.add(mapId);
+      openDialog(`= ${def.label} =`, def.intro);
+      return;
+    }
+    if (mode === 'dialog') { advanceDialog(); return; }
+    if (mode !== 'play') return;
+    const dx = player.dir === 'left' ? -1 : player.dir === 'right' ? 1 : 0;
+    const dy = player.dir === 'up' ? -1 : player.dir === 'down' ? 1 : 0;
+    bumpTile(player.x + dx, player.y + dy);
+  };
+
+  // ---------- pause menu (drawn on the canvas, GB-style) ----------
+  const pause = { open: false, t: 0, sel: 0 };
+  const PAUSE_ROWS = 4; // music, sfx, fullscreen, close
+
+  const togglePause = () => {
+    pause.open = !pause.open;
+    if (pause.open) pause.sel = 0;
+    blip(pause.open ? 720 : 520);
+  };
+
+  const pauseAdjust = (dir) => {
+    if (pause.sel === 0) {
+      settings.musicVol = Math.max(0, Math.min(100, settings.musicVol + dir * 10));
+      settings.music = settings.musicVol > 0;
+      music.volume = (settings.musicVol / 100) * MUSIC_TRIM;
+      syncMusic();
+    } else if (pause.sel === 1) {
+      settings.sfxVol = Math.max(0, Math.min(100, settings.sfxVol + dir * 10));
+      settings.sfx = settings.sfxVol > 0;
+      blip(880);
+    }
+    saveSettings();
+  };
+
+  const pauseSelect = () => {
+    if (pause.sel === 3) { togglePause(); return; }
+    if (pause.sel === 2) { setFull(!isFull()); blip(880); return; }
+    if (pause.sel === 0) { settings.music = !settings.music; syncMusic(); }
+    else { settings.sfx = !settings.sfx; if (settings.sfx) blip(880); }
+    saveSettings();
+  };
+
+  const pauseInput = (key) => {
+    if (key === 'up') { pause.sel = (pause.sel + PAUSE_ROWS - 1) % PAUSE_ROWS; blip(640, 0.02, 0.03); }
+    else if (key === 'down') { pause.sel = (pause.sel + 1) % PAUSE_ROWS; blip(640, 0.02, 0.03); }
+    else if (key === 'left') pauseAdjust(-1);
+    else if (key === 'right') pauseAdjust(1);
+    else if (key === 'a') pauseSelect();
+    else if (key === 'b') togglePause();
+  };
+
+  // ---------- fullscreen + shell buttons ----------
+  const page = document.querySelector('.gq-page');
+  const isFull = () => page.classList.contains('gq-full');
+  const setFull = (on) => {
+    page.classList.toggle('gq-full', on);
+    document.documentElement.style.overflow = on ? 'hidden' : '';
+    document.body.style.overflow = on ? 'hidden' : '';
+    // best-effort real fullscreen so the browser chrome gets out of the way
+    // (iPhone Safari has no Fullscreen API for pages)
+    try {
+      if (on && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+      } else if (!on && document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch {}
+  };
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && page.classList.contains('gq-full')) {
+      page.classList.remove('gq-full');
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    }
+  });
+
+  // the HUD icons live on the canvas: map clicks back to logical pixels
+  canvas.addEventListener('click', (e) => {
+    const r = canvas.getBoundingClientRect();
+    const lx = ((e.clientX - r.left) / r.width) * W;
+    const ly = ((e.clientY - r.top) / r.height) * H;
+    if (ly > 12) return;
+    const hit = (z) => lx >= z.x - 2 && lx <= z.x + z.w + 2 && ly >= z.y - 2 && ly <= z.y + z.h + 2;
+    if (hit(HUD_GEAR)) togglePause();
+    else if (hit(HUD_FULL)) { setFull(!isFull()); blip(880); }
+  });
+
+  addEventListener('keydown', (e) => {
+    if (pause.open) {
+      if (keymap[e.key]) { pauseInput(keymap[e.key]); e.preventDefault(); }
+      else if (e.key === 'Enter' || e.key === ' ' || e.key === 'z') { pauseInput('a'); e.preventDefault(); }
+      else if (e.key === 'x') pauseInput('b');
+      else if (e.key === 'Escape') togglePause();
+      return;
+    }
+    if (keymap[e.key]) { held[keymap[e.key]] = true; e.preventDefault(); }
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'z') { pressA(); e.preventDefault(); }
+    if (e.key === 'Escape' && mode === 'dialog') closeDialog();
+    if (e.key === 'Escape' && page.classList.contains('gq-full') && mode !== 'dialog') setFull(false);
+  });
+  addEventListener('keyup', (e) => { if (keymap[e.key]) held[keymap[e.key]] = false; });
+
+  document.querySelectorAll('.gameboy [data-dir]').forEach((b) => {
+    const dir = b.dataset.dir;
+    let repeatTimer = null;
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (pause.open) {
+        pauseInput(dir);
+        repeatTimer = setInterval(() => {
+          if (pause.open) pauseInput(dir);
+          else { clearInterval(repeatTimer); repeatTimer = null; }
+        }, 160);
+        return;
+      }
+      held[dir] = true;
+    });
+    const stopRepeat = () => {
+      held[dir] = false;
+      if (repeatTimer) { clearInterval(repeatTimer); repeatTimer = null; }
+    };
+    b.addEventListener('pointerup', stopRepeat);
+    b.addEventListener('pointerleave', stopRepeat);
+  });
+  document.getElementById('gbA').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (pause.open) { pauseInput('a'); return; }
+    pressA();
+  });
+  document.getElementById('gbB').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (pause.open) { pauseInput('b'); return; }
+    if (mode === 'dialog') closeDialog(440);
+  });
+  document.getElementById('gbStart').addEventListener('click', () => togglePause());
+  document.getElementById('gbSelect').addEventListener('click', () => { setFull(!isFull()); blip(880); });
+
+  // ---------- movement ----------
+  const SPEED = 0.8;
+  const tryMove = () => {
+    if (player.moving || mode !== 'play') return;
+    let dx = 0, dy = 0;
+    if (held.up) { dy = -1; player.dir = 'up'; }
+    else if (held.down) { dy = 1; player.dir = 'down'; }
+    else if (held.left) { dx = -1; player.dir = 'left'; }
+    else if (held.right) { dx = 1; player.dir = 'right'; }
+    if (!dx && !dy) return;
+    const nx = player.x + dx, ny = player.y + dy;
+    if (nx < 0 || ny < 0 || nx >= mapW() || ny >= mapH()) return;
+    const t = tileAt(nx, ny);
+    if (SOLID_CHARS.has(t)) { bumpTile(nx, ny); return; }
+    player.x = nx; player.y = ny;
+    player.moving = true;
+  };
+
+  const stepOnTile = () => {
+    const t = tileAt(player.x, player.y);
+    const key = `${player.x},${player.y}`;
+    if (WALK_TRIGGER.has(t)) {
+      const warp = mapDef().warps[key];
+      if (warp) { warpTo(warp, player.x, player.y); return; }
+    }
+    const def = mapDef();
+    if (t === 'i' && def.items[key] && !toysGot.has(`${mapId}:${key}`)) {
+      toysGot.add(`${mapId}:${key}`);
+      blip(1568, 0.08, 0.05);
+      const item = def.items[key];
+      if (typeof item === 'object') {
+        if (item.img && COLLECT_IMG[item.img] && BAG_SHEET) {
+          // backpack cutscene: gameplay pauses while the bag does its thing
+          const [ix, iy] = key.split(',').map(Number);
+          bagScene = { phase: 'in', t: 0, item, sx: ix * TILE + 8, sy: iy * TILE + 8 };
+          mode = 'bag';
+        } else {
+          openDialog(`GOT ${item.name}!`, item.text);
+        }
+      } else {
+        toast = { text: `GOT ${item}!`, t: 70 };
+      }
+    }
+  };
+
+  const updatePlayer = () => {
+    if (mode === 'banner') {
+      banner.t--;
+      if (banner.t <= 0) {
+        const intro2 = banner.intro2;
+        banner = null; mode = 'play';
+        if (intro2) openDialog(null, intro2);
+      }
+      return;
+    }
+    const tx2 = player.x * TILE, ty2 = player.y * TILE;
+    if (player.px !== tx2 || player.py !== ty2) {
+      player.px += Math.sign(tx2 - player.px) * Math.min(SPEED, Math.abs(tx2 - player.px));
+      player.py += Math.sign(ty2 - player.py) * Math.min(SPEED, Math.abs(ty2 - player.py));
+      if (player.px === tx2 && player.py === ty2) { player.moving = false; stepOnTile(); }
+    } else {
+      player.moving = false;
+    }
+  };
+
+  // ---------- procedural tile fallback (only when no painted map/tile art) ----------
+  const drawTile = (ch, px, py, interior) => {
+    ctx.fillStyle = interior ? '#cfd4e8' : PAL[2];
+    ctx.fillRect(px, py, TILE, TILE);
+    if (ch === '.' ) {
+      ctx.fillStyle = PAL[3]; ctx.fillRect(px + 1, py + 1, TILE - 2, TILE - 2);
+    } else if (ch === '=' || ch === 'M' || ch === 'G' || ch === 'g') {
+      ctx.fillStyle = '#c78c59'; ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = '#a9744a'; ctx.fillRect(px + 2, py + 2, 2, 2); ctx.fillRect(px + 9, py + 8, 2, 2);
+    } else if (ch === 'w') {
+      ctx.fillStyle = '#3f72ff'; ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = '#7fb2ff'; ctx.fillRect(px + 2, py + 4, 5, 1); ctx.fillRect(px + 8, py + 10, 5, 1);
+    } else if (ch === 'T' || ch === 'f') {
+      ctx.fillStyle = PAL[1]; ctx.fillRect(px + 1, py + 1, TILE - 2, TILE - 2);
+      ctx.fillStyle = PAL[0]; ctx.fillRect(px + 4, py + 4, 3, 3); ctx.fillRect(px + 9, py + 8, 3, 3);
+    } else if (ch === 'r' || ch === 'R') {
+      ctx.fillStyle = PAL[1]; ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = PAL[0];
+      for (let i = 0; i < 4; i++) ctx.fillRect(px, py + 2 + i * 4, TILE, 1);
+    } else if (ch === 'H' || ch === 'b') {
+      ctx.fillStyle = PAL[2]; ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = PAL[0];
+      ctx.fillRect(px + 2, py + 3, 5, 5); ctx.fillRect(px + 9, py + 3, 5, 5);
+      ctx.fillStyle = PAL[3];
+      ctx.fillRect(px + 3, py + 4, 3, 3); ctx.fillRect(px + 10, py + 4, 3, 3);
+      if (ch === 'b') { ctx.fillStyle = PAL[0]; ctx.fillRect(px + 2, py + 11, 12, 2); }
+    } else if (ch === 'D') {
+      ctx.fillStyle = PAL[2]; ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = PAL[0]; ctx.fillRect(px + 3, py + 2, 10, 14);
+      ctx.fillStyle = PAL[1]; ctx.fillRect(px + 4, py + 3, 8, 12);
+      ctx.fillStyle = PAL[3]; ctx.fillRect(px + 10, py + 9, 1, 2);
+    } else if (ch === 'S') {
+      ctx.fillStyle = PAL[0];
+      ctx.fillRect(px + 2, py + 2, 12, 8); ctx.fillRect(px + 7, py + 10, 2, 5);
+      ctx.fillStyle = PAL[3]; ctx.fillRect(px + 4, py + 4, 8, 1); ctx.fillRect(px + 4, py + 6, 6, 1);
+    } else if (ch === '#') {
+      ctx.fillStyle = PAL[0]; ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = PAL[1]; ctx.fillRect(px + 1, py + 1, TILE - 2, 5);
+    } else if (ch === 'k') {
+      ctx.fillStyle = PAL[0]; ctx.fillRect(px + 1, py + 4, 14, 11);
+      ctx.fillStyle = PAL[2]; ctx.fillRect(px + 3, py + 6, 10, 5);
+      ctx.fillStyle = PAL[1]; ctx.fillRect(px + 3, py + 11, 10, 2);
+    } else if (ch === 'P') {
+      ctx.fillStyle = PAL[0];
+      ctx.fillRect(px + 4, py + 2, 8, 6); ctx.fillRect(px + 6, py + 8, 4, 3); ctx.fillRect(px + 3, py + 11, 10, 3);
+      ctx.fillStyle = PAL[2]; ctx.fillRect(px + 6, py + 3, 2, 3);
+      if (Math.floor(tick / 20) % 2) { ctx.fillStyle = PAL[3]; ctx.fillRect(px + 13, py + 1, 2, 2); }
+    } else if (ch === 'i') {
+      ctx.fillStyle = PAL[2];
+      ctx.fillRect(px + 3, py + 4, 1, 1);
+    }
+  };
+
+  // ---------- UI text + chrome ----------
+  const text = (str, x, y, col = 0) => {
+    ctx.fillStyle = UI[col];
+    ctx.font = `${FS}px ${PXFONT}`;
+    ctx.textBaseline = 'top';
+    ctx.fillText(str, x, y);
+  };
+
+  // ---------- pixel metal rail (frames dialog + pause boxes) ----------
+  const RAIL = { out: '#262430', hi: '#ececf5', light: '#c6c6d4', mid: '#9a9aaa', dark: '#6c6c7c' };
+  const drawRail = (x, y, w, h) => {
+    const ring = (n, col) => {
+      ctx.fillStyle = col;
+      ctx.fillRect(x + n, y + n, w - 2 * n, 1);
+      ctx.fillRect(x + n, y + h - 1 - n, w - 2 * n, 1);
+      ctx.fillRect(x + n, y + n, 1, h - 2 * n);
+      ctx.fillRect(x + w - 1 - n, y + n, 1, h - 2 * n);
+    };
+    ring(0, RAIL.out);
+    ring(1, RAIL.hi);
+    ring(2, RAIL.mid);
+    ring(3, RAIL.out);
+    ctx.fillStyle = RAIL.dark;
+    ctx.fillRect(x + 1, y + h - 2, w - 2, 1);
+    ctx.fillRect(x + w - 2, y + 1, 1, h - 2);
+    ctx.fillStyle = RAIL.hi;
+    [[x + 1, y + 1], [x + w - 3, y + 1], [x + 1, y + h - 3], [x + w - 3, y + h - 3]]
+      .forEach(([rx, ry]) => ctx.fillRect(rx, ry, 2, 2));
+    ctx.fillStyle = RAIL.out;
+    [[x + 2, y + 2], [x + w - 2, y + 2], [x + 2, y + h - 2], [x + w - 2, y + h - 2]]
+      .forEach(([rx, ry]) => ctx.fillRect(rx, ry, 1, 1));
+  };
+
+  // ---------- HUD pixel icons ----------
+  const drawIcon = (rows2, x, y, col) => {
+    ctx.fillStyle = col;
+    rows2.forEach((row, ry) => {
+      for (let rx = 0; rx < row.length; rx++) {
+        if (row[rx] === '1') ctx.fillRect(x + rx, y + ry, 1, 1);
+      }
+    });
+  };
+  const ICON_GEAR = [
+    '00011000', '00111100', '01100110', '11000011',
+    '11000011', '01100110', '00111100', '00011000',
+  ];
+  const ICON_FULL = [
+    '11100111', '10000001', '10000001', '00000000',
+    '00000000', '10000001', '10000001', '11100111',
+  ];
+  const ICON_BACKPACK = [
+    '00111100', '01000010', '11111111', '10111101',
+    '10100101', '10111101', '10100101', '11111111',
+  ];
+  const ICON_EXIT = [
+    '00000000', '01000010', '00100100', '00011000',
+    '00011000', '00100100', '01000010', '00000000',
+  ];
+  const HUD_GEAR = { x: 0, y: 1, w: 8, h: 8 };
+  const HUD_FULL = { x: 0, y: 1, w: 8, h: 8 };
+  const drawHudIcons = (col) => {
+    HUD_FULL.x = W - 11;
+    HUD_GEAR.x = W - 22;
+    drawIcon(ICON_GEAR, HUD_GEAR.x, HUD_GEAR.y, col);
+    drawIcon(isFull() ? ICON_EXIT : ICON_FULL, HUD_FULL.x, HUD_FULL.y, col);
+  };
+
+  const drawIconAt = (label, px, py) => {
+    const rows8 = ICONS[label];
+    if (!rows8) return;
+    for (let y = 0; y < 8; y++) {
+      const row = rows8[y];
+      for (let x = 0; x < 8; x++) {
+        const ch = row && row[x];
+        if (!ch || ch === '.') continue;
+        const col = CHAR_COL[ch];
+        if (col === undefined) continue;
+        ctx.fillStyle = PAL[col];
+        ctx.fillRect(Math.round(px) + x, Math.round(py) + y, 1, 1);
+      }
+    }
+  };
+
+  // ---------- render ----------
+  const render = () => {
+    if (mode === 'title') {
+      // bitmap title screen (Figma design); the two frames blink PRESS A
+      const img = TITLE_IMG[Math.floor(tick / 30) % 2];
+      if (img) {
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 0, 0, W, H);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = '#151030';
+        ctx.fillRect(0, 0, W, H);
+      }
+      // glinting stars over the night sky, steering clear of the logo
+      for (let i = 0; i < 26; i++) {
+        const h2 = (i * 2654435761) >>> 0;
+        const sx = h2 % W;
+        const sy = 2 + ((h2 >>> 9) % 36);
+        if (sx > 26 && sx < 116 && sy > 3 && sy < 34) continue;
+        const ph = Math.floor(tick / 12 + i * 3) % 8;
+        if (ph > 3) continue; // dark most of the cycle: a glint, not a lamp
+        ctx.fillStyle = ['#ffffff', '#b9b2e8', '#7fe9ff', '#b9b2e8'][i % 4];
+        ctx.globalAlpha = ph === 1 || ph === 2 ? 1 : 0.45;
+        ctx.fillRect(sx, sy, 1, 1);
+        if (ph === 2) {
+          ctx.globalAlpha = 0.7;
+          ctx.fillRect(sx - 1, sy, 1, 1); ctx.fillRect(sx + 1, sy, 1, 1);
+          ctx.fillRect(sx, sy - 1, 1, 1); ctx.fillRect(sx, sy + 1, 1, 1);
+        }
+        ctx.globalAlpha = 1;
+      }
+      drawHudIcons('#b9b2e8');
+      return;
+    }
+
+    const interior = rows()[0][0] === '#';
+    const MW = mapW() * TILE, MH = mapH() * TILE;
+    let camX = Math.round(player.px - W / 2 + 8);
+    let camY = Math.round(player.py - H / 2 + 8);
+    camX = Math.max(0, Math.min(camX, Math.max(0, MW - W)));
+    camY = Math.max(0, Math.min(camY, Math.max(0, MH - H)));
+    if (MW < W) camX = -(W - MW) / 2;
+    if (MH < H) camY = -(H - MH) / 2;
+
+    ctx.fillStyle = PAL[0]; ctx.fillRect(0, 0, W, H);
+
+    const x0 = Math.max(0, Math.floor(camX / TILE));
+    const y0 = Math.max(0, Math.floor(camY / TILE));
+
+    if (MAP_IMG[mapId]) {
+      const img = MAP_IMG[mapId];
+      const sc = mapDef().artScale || 3;
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, 0, 0, img.width, img.height, -camX, -camY, img.width / sc, img.height / sc);
+      ctx.restore();
+    } else {
+      const theme = interior ? (mapDef().theme || 'home') : 'outdoor';
+      const artOverride = mapDef().art;
+      for (let y = y0; y <= y0 + Math.ceil(H / TILE) + 1 && y < mapH(); y++) {
+        for (let x = x0; x <= x0 + Math.ceil(W / TILE) + 1 && x < mapW(); x++) {
+          const ch = tileAt(x, y);
+          const px = x * TILE - camX, py = y * TILE - camY;
+          if (!drawTileArt(ch, px, py, theme, artOverride)) drawTile(ch, px, py, interior);
+        }
+      }
+    }
+
+    // items
+    const def = mapDef();
+    for (const key of Object.keys(def.items)) {
+      if (toysGot.has(`${mapId}:${key}`)) continue;
+      const [ix, iy] = key.split(',').map(Number);
+      const item = def.items[key];
+      if (typeof item === 'object' && item.img && COLLECT_IMG[item.img]) {
+        // sprite collectable: slow floating bob, offset per item so they drift out of phase
+        const img = COLLECT_IMG[item.img];
+        const iw = img.width / 3, ih = img.height / 3;
+        const bobF = Math.sin(tick / 24 + ix * 1.7) * 1.2;
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, ix * TILE + (TILE - iw) / 2 - camX, iy * TILE + (TILE - ih) / 2 - camY + bobF, iw, ih);
+        ctx.restore();
+      } else if (typeof item !== 'object') {
+        const bob = Math.floor(tick / 15) % 2;
+        drawIconAt(item, ix * TILE - camX + 4, iy * TILE - camY + 4 + bob);
+      }
+    }
+
+    // scenery props + player, y-sorted by baseline so the player can walk
+    // both in front of and behind free-standing objects
+    const deferred = [];
+    for (const p of def.props || []) {
+      const img = PROP_IMG[p.img];
+      if (!img) continue;
+      const meta = PROP_META[p.img];
+      const pw2 = img.width / 3, ph2 = img.height / 3;
+      const px2 = (p.cx - meta.ccx) / 3, py2 = (p.bottom - meta.cb) / 3;
+      deferred.push({
+        base: p.bottom / 3,
+        draw: () => {
+          ctx.save();
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(img, px2 - camX, py2 - camY, pw2, ph2);
+          ctx.restore();
+        },
+      });
+    }
+
+    // player — hi-res sheet if provided, procedural fallback otherwise.
+    // baseline = feet position, so props sort naturally around him
+    const age = def.age;
+    const frame = player.moving ? Math.floor(tick / 8) % 2 : 0;
+    const facing = player.dir === 'left' || player.dir === 'right' ? 'side' : player.dir;
+    const flip = player.dir === 'left';
+    const dx = player.px - camX, dy = player.py - camY - 2;
+    deferred.push({ base: player.py / 1 + 16, draw: drawPlayer });
+    deferred.sort((a, b) => a.base - b.base);
+    for (const d of deferred) d.draw();
+
+    function drawPlayer() {
+    if (SHEETS[age]) {
+      const cfg = SHEET_CONFIG[age];
+      let srcX, srcY, doFlip = flip;
+      if (cfg) {
+        const anim = (player.moving ? cfg.walk : cfg.idle)[facing];
+        const step = player.moving
+          ? Math.floor(tick / 5) % cfg.frames
+          : Math.floor(tick / 16) % cfg.frames;
+        srcX = (anim.c + step) * cfg.fw; srcY = anim.r * cfg.fh;
+        if (facing === 'side') doFlip = cfg.sideFaces === 'right' ? player.dir === 'left' : player.dir === 'right';
+      } else {
+        srcX = FRAME_INDEX[facing][frame] * 48; srcY = 0;
+      }
+      // hero renders at 2 tiles (32 logical px = clean 2x of the 48px frame)
+      // 32px frame, drawn 6px higher than the strict tile: the painted roads
+      // sit high in their rows, so this centres the body on the road band
+      const sx = dx - 8, sy = Math.round(player.py) - camY - 20;
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      if (doFlip) {
+        ctx.translate(sx + 32, sy);
+        ctx.scale(-1, 1);
+        ctx.drawImage(SHEETS[age], srcX, srcY, 48, 48, 0, 0, 32, 32);
+      } else {
+        ctx.drawImage(SHEETS[age], srcX, srcY, 48, 48, sx, sy, 32, 32);
+      }
+      ctx.restore();
+    } else {
+      const set = SPRITES[age] || SPRITES[4];
+      const sprRows = set[facing][frame];
+      drawGrid(sprRows, dx, dy, flip, 16);
+    }
+    }
+
+    // HUD
+    ctx.fillStyle = UI[3]; ctx.fillRect(0, 0, W, 10);
+    ctx.fillStyle = UI[0]; ctx.fillRect(0, 10, W, 1);
+    text(def.label, 3, 2);
+    // right side of the bar, laid out right-to-left with measured gaps:
+    // [J counter] [backpack + count] [gear] [fullscreen]
+    ctx.font = `${FS}px ${PXFONT}`;
+    const cnt = `${collectGot()}/${COLLECT_TOTAL}`;
+    const cntW = ctx.measureText(cnt).width;
+    const cntX = W - 26 - cntW;
+    text(cnt, cntX, 2);
+    const bpX = cntX - 10, bpY = backpackPulse > 6 ? 0 : 1;
+    drawIcon(ICON_BACKPACK, bpX, bpY, UI[0]);
+    const hudRight = `J${jobsRead.size}/12`;
+    text(hudRight, bpX - ctx.measureText(hudRight).width - 5, 2);
+    drawHudIcons(UI[0]);
+
+    // backpack cutscene: slide in bottom-right, unzip, swallow the item, leave
+    if (bagScene) {
+      const s = bagScene;
+      const frame = s.phase === 'unzip' ? Math.min(2, 1 + Math.floor(s.t / 8))
+        : s.phase === 'zip' ? Math.max(0, 1 - Math.floor(s.t / 8))
+        : s.phase === 'fly' ? 2 : 0;
+      const img = BAG_SHEET;
+      if (img) {
+        const fw = img.width / 3, fh = img.height;
+        // big and proud, per the design mock: ~2/3 screen height, tucked into
+        // the corner with its right and bottom edges bleeding off screen
+        const bh = 64;
+        const bw = Math.round(fw * (bh / fh));
+        const restX = W - bw + 8, restY = H - bh + 10;
+        let bx = restX, by = restY;
+        if (s.phase === 'in') {
+          const e = 1 - Math.pow(1 - s.t / 14, 3);
+          bx = restX + (1 - e) * bw;
+          by = restY + (1 - e) * bh;
+        } else if (s.phase === 'out') {
+          const e = Math.pow(s.t / 14, 3);
+          bx = restX + e * bw;
+          by = restY + e * bh;
+        }
+        ctx.save();
+        ctx.imageSmoothingEnabled = false; // pixel art: keep it crunchy
+        ctx.drawImage(img, frame * fw, 0, fw, fh, bx, by, bw, bh);
+        if (s.phase === 'fly') {
+          const it = COLLECT_IMG[s.item.img];
+          if (it) {
+            const t2 = s.t / 22;
+            const e2 = t2 * t2;
+            const sx2 = s.sx - camX, sy2 = s.sy - camY;
+            const txp = bx + bw * 0.45, typ = by + 8;
+            const x = sx2 + (txp - sx2) * e2;
+            const y = sy2 + (typ - sy2) * e2 - Math.sin(Math.PI * t2) * 16;
+            const sc = (1 - 0.6 * e2) / 3;
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(it, x - (it.width * sc) / 2, y - (it.height * sc) / 2, it.width * sc, it.height * sc);
+          }
+        }
+        ctx.restore();
+      }
+    }
+
+    // toast
+    if (toast) {
+      toast.t--;
+      if (toast.t > 0) {
+        ctx.font = `${FS}px ${PXFONT}`;
+        const tw = ctx.measureText(toast.text).width;
+        const tx2 = Math.max(2, Math.round((W - tw) / 2));
+        ctx.fillStyle = UI[0]; ctx.fillRect(tx2 - 4, 13, tw + 8, 11);
+        ctx.fillStyle = UI[3];
+        ctx.fillText(toast.text, tx2, 16);
+      } else toast = null;
+    }
+
+    // banner
+    if (mode === 'banner' && banner) {
+      const BY = Math.round(H / 2) - 20;
+      ctx.fillStyle = UI[0]; ctx.fillRect(0, BY, W, 40);
+      ctx.fillStyle = UI[3];
+      ctx.font = `18px ${PXFONT}`;
+      ctx.fillText('LEVEL UP!', Math.round((W - ctx.measureText('LEVEL UP!').width) / 2), BY + 4);
+      ctx.font = `${FS}px ${PXFONT}`;
+      ctx.fillText(banner.text, Math.round((W - ctx.measureText(banner.text).width) / 2), BY + 28);
+    }
+
+    // dialog
+    if (mode === 'dialog' && dialog) {
+      const DY = H - 50; // dialog box: bottom 48px + 2px margin
+      ctx.fillStyle = UI[3]; ctx.fillRect(2, DY, W - 4, 48);
+      drawRail(2, DY, W - 4, 48);
+      const pageText = dialog.pages[dialog.page].join('\n');
+      // type on the game clock, not per frame (frame rate varies by display):
+      // one character every 3 ticks = 20 chars/sec, proper Game Boy pace
+      if (dialog.chars < pageText.length && tick !== dialog.lastTypeTick && tick % 3 === 0) {
+        dialog.chars += 1;
+        if (dialog.chars % 3 === 0) blip(980, 0.015, 0.02);
+      }
+      dialog.lastTypeTick = tick;
+      const shown = pageText.slice(0, dialog.chars).split('\n');
+      shown.forEach((ln, i) => text(ln, 11, DY + 7 + i * 9));
+      if (dialog.chars >= pageText.length && Math.floor(tick / 20) % 2) {
+        ctx.fillStyle = UI[0];
+        ctx.fillRect(W - 16, DY + 37, 7, 2);
+        ctx.fillRect(W - 15, DY + 39, 5, 2);
+        ctx.fillRect(W - 14, DY + 41, 3, 2);
+      }
+    }
+
+    // pause menu on top of everything: dim, then slide the panel in from above
+    if (pause.t > 0.01) {
+      const ease = 1 - Math.pow(1 - pause.t, 3);
+      ctx.fillStyle = `rgba(16, 10, 40, ${0.6 * ease})`;
+      ctx.fillRect(0, 0, W, H);
+      const pw = 110, ph = 75;
+      const px0 = Math.round((W - pw) / 2);
+      const targetY = Math.round((H - ph) / 2);
+      const py0 = Math.round(targetY * ease - ph * (1 - ease));
+      ctx.fillStyle = UI[3]; ctx.fillRect(px0, py0, pw, ph);
+      drawRail(px0, py0, pw, ph);
+      ctx.font = `${FS}px ${PXFONT}`;
+      ctx.textBaseline = 'top';
+      ctx.fillText('= PAUSED =', px0 + Math.round((pw - ctx.measureText('= PAUSED =').width) / 2), py0 + 5);
+      const menuRows = [
+        { label: 'MUSIC', vol: settings.musicVol, on: settings.music },
+        { label: 'SFX', vol: settings.sfxVol, on: settings.sfx },
+      ];
+      menuRows.forEach((row, i) => {
+        const ry = py0 + 18 + i * 13;
+        ctx.fillStyle = UI[0];
+        if (pause.sel === i) ctx.fillText('>', px0 + 4, ry);
+        ctx.fillText(row.label, px0 + 10, ry);
+        const bx = px0 + 40;
+        for (let seg = 0; seg < 10; seg++) {
+          const sx2 = bx + seg * 5;
+          if (row.on && row.vol > seg * 10) {
+            ctx.fillRect(sx2, ry + 1, 4, 6);
+          } else {
+            ctx.fillRect(sx2, ry + 1, 4, 1);
+            ctx.fillRect(sx2, ry + 6, 4, 1);
+          }
+        }
+        if (!row.on) ctx.fillText('OFF', bx + 53, ry);
+      });
+      const fy = py0 + 18 + 2 * 13;
+      ctx.fillStyle = UI[0];
+      if (pause.sel === 2) ctx.fillText('>', px0 + 4, fy);
+      ctx.fillText('FULLSCREEN', px0 + 10, fy);
+      ctx.fillText(isFull() ? 'ON' : 'OFF', px0 + 78, fy);
+      const cy = py0 + 18 + 3 * 13;
+      ctx.fillStyle = UI[0];
+      if (pause.sel === 3) ctx.fillText('>', px0 + 4, cy);
+      ctx.fillText('CLOSE', px0 + 10, cy);
+    }
+  };
+
+  // fixed timestep: game logic always runs at 60 steps/sec regardless of the
+  // display's refresh rate (unthrottled rAF ran double speed on 120Hz screens)
+  const STEP = 1000 / 60;
+  let last = performance.now();
+  let acc = 0;
+  const loop = (now) => {
+    acc += now - last;
+    last = now;
+    if (acc > 250) acc = 250; // returning from a hidden tab: don't fast-forward
+    while (acc >= STEP) {
+      tick++;
+      pause.t = Math.max(0, Math.min(1, pause.t + (pause.open ? 0.12 : -0.12)));
+      if (backpackPulse > 0) backpackPulse--;
+      if (bagScene) {
+        const s = bagScene;
+        s.t++;
+        const durs = { in: 14, unzip: 16, fly: 22, zip: 16, out: 14 };
+        if (s.t >= durs[s.phase]) {
+          s.t = 0;
+          if (s.phase === 'in') { s.phase = 'unzip'; blip(988, 0.05, 0.03); }
+          else if (s.phase === 'unzip') s.phase = 'fly';
+          else if (s.phase === 'fly') { s.phase = 'zip'; blip(740, 0.05, 0.03); }
+          else if (s.phase === 'zip') s.phase = 'out';
+          else {
+            const item = s.item;
+            bagScene = null;
+            mode = 'play';
+            backpackPulse = 12;
+            blip(1976, 0.06, 0.04);
+            if (collectGot() >= COLLECT_TOTAL) {
+              pendingDialog = {
+                title: 'BACKPACK FULL!',
+                body: 'Every collectable found! A designer is supposed to travel light. This was never going to be that. 100 PERCENT.',
+              };
+            }
+            openDialog(`GOT ${item.name}!`, item.text);
+          }
+        }
+      }
+      if (!pause.open) {
+        tryMove();
+        updatePlayer();
+      }
+      acc -= STEP;
+    }
+    render();
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+
+  // dev-only introspection for tooling (harmless in production)
+  window.__game = {
+    get: () => ({ x: player.x, y: player.y, mapId, mode, bag: bagScene ? bagScene.phase : null, got: [...toysGot], jobs: [...jobsRead] }),
+    tp: (x, y) => { player.x = x; player.y = y; player.px = x * TILE; player.py = y * TILE; player.moving = false; },
+  };
+
+  // ---------- EXPORT MODE: /game?export ----------
+  if (location.search.includes('export')) {
+    const renderMapCanvas = (id, annotated) => {
+      const def = MAPS[id];
+      const R = def.rows, w = R[0].length, h = R.length;
+      const c = document.createElement('canvas');
+      c.width = w * 48; c.height = h * 48;
+      const g = c.getContext('2d');
+      g.imageSmoothingEnabled = false;
+      const interior = R[0][0] === '#';
+      const theme = interior ? (def.theme || 'home') : 'outdoor';
+      const set = TILE_ART[theme];
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const ch = R[y][x];
+          const px = x * 48, py = y * 48;
+          if (set && TS[set.base.s]) {
+            const b = set.base;
+            g.drawImage(TS[b.s], b.x * 48, b.y * 48, 48, 48, px, py, 48, 48);
+            const art = (def.art && def.art[ch]) || set[ch];
+            if (art && art !== set.base && TS[art.s]) {
+              g.drawImage(TS[art.s], art.x * 48, art.y * 48, 48, 48, px, py, 48, 48);
+            }
+          } else {
+            g.fillStyle = '#7ba05b'; g.fillRect(px, py, 48, 48);
+          }
+          if (ch === 'P') { g.fillStyle = '#c9a227'; g.fillRect(px + 12, py + 6, 24, 18); g.fillRect(px + 9, py + 33, 30, 9); }
+        }
+      }
+      if (annotated) {
+        g.strokeStyle = 'rgba(255,0,120,0.5)'; g.lineWidth = 1;
+        for (let x = 0; x <= w; x++) { g.beginPath(); g.moveTo(x * 48, 0); g.lineTo(x * 48, h * 48); g.stroke(); }
+        for (let y = 0; y <= h; y++) { g.beginPath(); g.moveTo(0, y * 48); g.lineTo(w * 48, y * 48); g.stroke(); }
+        g.font = 'bold 16px monospace';
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const ch = R[y][x];
+            if (SOLID_CHARS.has(ch)) { g.fillStyle = 'rgba(255,0,0,0.18)'; g.fillRect(x * 48, y * 48, 48, 48); }
+            if ('DSGgMiP'.includes(ch) && ch !== '.') {
+              g.fillStyle = '#fff'; g.fillRect(x * 48 + 2, y * 48 + 2, 18, 20);
+              g.fillStyle = '#c00'; g.fillText(ch, x * 48 + 5, y * 48 + 18);
+            }
+          }
+        }
+      }
+      return c;
+    };
+
+    const exPanel = document.createElement('div');
+    exPanel.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(7,5,20,.96);color:#f2f0ff;font-family:monospace;overflow:auto;padding:40px';
+    exPanel.innerHTML = '<h2 style="margin-bottom:8px">MAP EXPORT</h2><p style="margin-bottom:20px;color:#a8a3cf">Art PNG = painting base (48px/tile). Annotated = grid + logic markers (red = solid, letters = doors/signs/gates/mats/items/trophy — keep these positions functional).<br>Finished paintings go in <b>public/images/game/maps/&lt;mapname&gt;.png</b> at the exact same dimensions.</p>';
+    const list = document.createElement('div');
+    Object.keys(MAPS).forEach((id) => {
+      const def = MAPS[id];
+      const row = document.createElement('p');
+      row.style.cssText = 'margin:6px 0';
+      const dims = `${def.rows[0].length * 48}x${def.rows.length * 48}`;
+      row.innerHTML = `<b style="display:inline-block;width:130px">${id}</b> <span style="color:#6b6494">${dims}px</span> `;
+      [['art', false], ['annotated', true]].forEach(([label, ann]) => {
+        const a = document.createElement('a');
+        a.textContent = ` [${label}]`;
+        a.href = '#';
+        a.style.color = '#ff70ff';
+        a.onclick = (e) => {
+          e.preventDefault();
+          renderMapCanvas(id, ann).toBlob((blob) => {
+            const u = URL.createObjectURL(blob);
+            const dl = document.createElement('a');
+            dl.href = u; dl.download = `${id}${ann ? '-annotated' : ''}.png`;
+            dl.click();
+            setTimeout(() => URL.revokeObjectURL(u), 5000);
+          });
+        };
+        row.appendChild(a);
+      });
+      list.appendChild(row);
+    });
+    exPanel.appendChild(list);
+    const ready = () => {
+      if (TS.serene && TS.room && TS.fur) document.body.appendChild(exPanel);
+      else setTimeout(ready, 200);
+    };
+    ready();
+    // scriptable access for tooling (e.g. saving map PNGs from the console)
+    window.__renderMapCanvas = renderMapCanvas;
+  }
+</script>

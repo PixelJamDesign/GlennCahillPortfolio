@@ -1,0 +1,34 @@
+---
+import Button from './Button.astro';
+---
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo" aria-label="Glenn Cahill — home">
+      <img src="/images/logo.svg" alt="" width="42" height="42" />
+    </a>
+    <div class="nav-links">
+      <a class="nav-link" href="/#about"><i>01</i>About</a>
+      <a class="nav-link" href="/work"><i>02</i>Work</a>
+      <a class="nav-link" href="/#career"><i>03</i>Career</a>
+      <a class="nav-link" href="/#passions"><i>04</i>Passions</a>
+      <Button href="/#contact">Let's talk</Button>
+    </div>
+  </div>
+</nav>
+
+<script>
+  const nav = document.getElementById('nav');
+  let lastY = 0;
+  addEventListener(
+    'scroll',
+    () => {
+      const y = scrollY;
+      if (nav) {
+        nav.classList.toggle('scrolled', y > 20);
+        nav.classList.toggle('hidden', y > lastY && y > 300);
+      }
+      lastY = y;
+    },
+    { passive: true }
+  );
+</script>

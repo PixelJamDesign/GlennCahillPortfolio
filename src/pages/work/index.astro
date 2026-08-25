@@ -1,0 +1,85 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HeroParticles from '../../components/HeroParticles.astro';
+
+const projects = (await getCollection('work')).sort((a, b) => a.data.order - b.data.order);
+const tags = [...new Set(projects.map((p) => p.data.tag))];
+---
+
+<BaseLayout title="Work | Glenn Cahill" description="Case studies — design systems, product design, UI and branding by Glenn Cahill.">
+  <header class="cs-hero">
+    <div class="aurora" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-3"></div>
+    </div>
+    <HeroParticles />
+    <div class="wrap">
+      <p class="cs-crumb reveal">02 — Work</p>
+      <h1 class="cs-title reveal">All Work</h1>
+      <p class="cs-excerpt reveal">
+        Sixteen case studies across design systems, product, UI and brand. Newest first.
+      </p>
+    </div>
+  </header>
+
+  <section class="wrap" style="padding-bottom: clamp(90px, 12vw, 160px)">
+    <div class="work-filters reveal" role="group" aria-label="Filter work by category">
+      <button class="filter-btn active" data-filter="all" aria-pressed="true">All</button>
+      {tags.map((t) => (
+        <button class="filter-btn" data-filter={t} aria-pressed="false">{t}</button>
+      ))}
+    </div>
+
+    <div class="work-grid" id="workGrid">
+      {projects.map((p, i) => (
+        <a
+          class={`work-card reveal${i === 0 ? ' feature' : ''}`}
+          style={`--d: ${(i % 2) * 0.1}s`}
+          href={`/work/${p.id}`}
+          data-tag={p.data.tag}
+        >
+          <div class="work-media">
+            <img src={p.data.cover} alt={p.data.title} loading={i < 2 ? 'eager' : 'lazy'} />
+          </div>
+          <div class="work-info">
+            <div>
+              <span class="tag">{p.data.tag}</span>
+              <h3>{p.data.title}</h3>
+            </div>
+            <span class="work-arrow" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
+                <path d="M1 13L13 1M13 1H3M13 1V11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    <p class="work-empty" id="workEmpty" hidden>Nothing in that category yet.</p>
+  </section>
+
+  <script>
+    const buttons = document.querySelectorAll<HTMLButtonElement>('.filter-btn');
+    const cards = document.querySelectorAll<HTMLAnchorElement>('#workGrid .work-card');
+    const empty = document.getElementById('workEmpty');
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const filter = btn.dataset.filter;
+        buttons.forEach((b) => {
+          b.classList.toggle('active', b === btn);
+          b.setAttribute('aria-pressed', String(b === btn));
+        });
+        let shown = 0;
+        cards.forEach((card) => {
+          const show = filter === 'all' || card.dataset.tag === filter;
+          card.toggleAttribute('hidden', !show);
+          if (show) shown++;
+        });
+        if (empty) empty.hidden = shown > 0;
+      });
+    });
+  </script>
+</BaseLayout>

@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Button from '../components/Button.astro';
+import HeroParticles from '../components/HeroParticles.astro';
+---
+
+<BaseLayout title="Page not found | Glenn Cahill">
+  <section class="cs-hero" style="min-height: 70svh; display: flex; align-items: center;">
+    <div class="aurora" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-3"></div>
+    </div>
+    <HeroParticles />
+    <div class="wrap" style="text-align: center;">
+      <h1 class="cs-title">Lost in the void.</h1>
+      <p class="cs-excerpt" style="margin-inline: auto;">
+        This page doesn't exist — or it moved when the site did.
+      </p>
+      <p style="margin-top: 34px;">
+        <Button variant="primary" href="/">Back home</Button>
+      </p>
+    </div>
+  </section>
+</BaseLayout>
