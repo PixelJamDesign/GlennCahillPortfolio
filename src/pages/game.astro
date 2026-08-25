@@ -269,6 +269,9 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
   // Viewport 142x96 at 9x internal scale: same 1237x837 shell-window shape as
   // 213x144, but zoomed 50% so sprites and tiles sit larger on screen
   const TILE = 16, W = 142, H = 96;
+  // the HUD bar is opaque, so the world viewport starts below it — otherwise
+  // the top 11px of the map (building roofs) can never be seen
+  const HUD_H = 11;
 
   const JOBS = [
     { years: '2006-10', company: 'MOOSE INTERNET', blurb: 'JUNIOR DESIGNER — and the only one! Hand-coded HTML, CSS and JS. FLASH sites and banners. GIFs. Print, from business cards to booklets. Everyone starts somewhere.' },
@@ -481,7 +484,7 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
         'T.wHHHHHww..HHHHH.HHHHH..HHHHH..HHHHH..HHHHHHHHHHHH..HHHHHHHHHHHHHHHHHH....H..........H.HHHHH..HHHHHHHHHH..T...',
         'T.wHHHHHww..HHHHH.HHHHH..HHHHH..HHHHH..HHHHHHHHHHHH......HHHHHHHHHHHHHH....H..........H.HHHHH..HHHHHHHHHH..T...',
         'T.wHHHHHww..HHHHH.HHHHH..HHHHH..HHHHH..HHHHHHHHHHHH......HHHHHHHHHHHHHH....H..i.......H.HHHHH..HHHHHHHHHH..T...',
-        'T..HHHHH....HHHHH.HHHHH..HHHHH..HHHHH..HHHHHHHHHHHH.T....HHHHHHHHHHHHHH....H..........H.HHHHHkkHHHHHHHHHH..T...',
+        'T..HHHHH....HHHHH.HHHHH..HHHHH..HHHHH..HHHHHHHHHHHH.T....HHHHHHHHHHHHHH....H....k.....H.HHHHHkkHHHHHHHHHH..T...',
         'T..HDHHH....HHHDHTHDHHHTTHHDHHSTHHDHH..HHDHHHHHHDHH.T....HHHHDHHHHHDHHH....H..........H.HHHDHkkHHDHHHHDHH..T...',
         'T..S=....TTi..S=...=STT...S=...i.S=.S...k=S.kk.S=...T..TTTTTT=S...S=....TT.TTTTT==TTTTT.TTT=S...S=...S=..TTT...',
         'S=============================================================================================================S',
@@ -520,7 +523,23 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
         '101,6': 'SMARTY HQ. Freshly built. The current chapter is being written inside.',
         '0,7': 'WEST: the story of how GLENN got here. Under construction, the childhood eras are coming soon!',
         '110,7': 'EAST: the street ends here... for now. Every new project adds another door.',
+        // flavour interactions
+        '53,1': 'Look at those colours! The PIXEL JAM logo looks so good up here. Whoever painted this has taste.',
+        '54,1': 'Look at those colours! The PIXEL JAM logo looks so good up here. Whoever painted this has taste.',
+        '55,1': 'Look at those colours! The PIXEL JAM logo looks so good up here. Whoever painted this has taste.',
+        '56,1': 'Look at those colours! The PIXEL JAM logo looks so good up here. Whoever painted this has taste.',
+        '25,9': `I'm not hungry! Anyway, this sandwich has a name on it. Jill.`,
+        '26,9': `I'm not hungry! Anyway, this sandwich has a name on it. Jill.`,
+        '52,9': `I'm not hungry! Anyway, this sandwich has a name on it. Jill.`,
+        '53,9': `I'm not hungry! Anyway, this sandwich has a name on it. Jill.`,
+        '64,5': 'In my account there is... not as much as I had hoped.',
+        '65,5': 'In my account there is... not as much as I had hoped.',
+        '72,6': `Who's got time for this nowadays?!`,
+        '73,6': `Who's got time for this nowadays?!`,
+        '80,4': 'I used to play for my school team.',
       },
+      waterText: 'Careful, deep water! Wait for GLENN CAHILL: SWIMMING SIMULATOR. Coming soon!',
+      phones: ['93,5', '94,5'],
       // free-standing scenery, y-sorted against the player. cx/bottom are the
       // visible content anchor in art px, measured by diffing the layout plan.
       props: [
@@ -880,6 +899,7 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
   };
 
   let ac = null;
+  let phoneBusy = false;
   const blip = (freq = 880, dur = 0.05, vol = 0.04) => {
     if (!settings.sfx) return;
     vol *= settings.sfxVol / 70; // 70 = the tuned default loudness
@@ -895,6 +915,12 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
     } catch {}
   };
   const jingle = () => { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => blip(f, 0.09, 0.05), i * 90)); };
+  // classic UK double ring, twice: bring-bring... bring-bring... then done
+  const phoneRing = (done) => {
+    const burst = (at) => setTimeout(() => { blip(420, 0.35, 0.045); blip(466, 0.35, 0.045); }, at);
+    [0, 450, 1500, 1950].forEach(burst);
+    setTimeout(done, 2700);
+  };
 
   // ---------- dialog ----------
   // wrap by measured pixel width: Tengoku is proportional, so counting
@@ -994,6 +1020,22 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
     }
     if (t === 'S' && def.signs[key]) { blip(660); openDialog(null, def.signs[key]); return true; }
     if (t === 'P') { jingle(); openDialog('= 2026 =', FINALE); return true; }
+    // phone boxes: let it ring out before the disappointment lands
+    if (def.phones && def.phones.includes(key)) {
+      if (!phoneBusy) {
+        phoneBusy = true;
+        phoneRing(() => {
+          phoneBusy = false; blip(520);
+          if (mode === 'play') openDialog(null, 'They hung up!');
+          else pendingDialog = { title: null, body: 'They hung up!' };
+        });
+      }
+      return true;
+    }
+    // any stretch of water shares one gag
+    if (t === 'w' && def.waterText) { blip(660); openDialog(null, def.waterText); return true; }
+    // flavour text keyed by coordinates on other solid tiles (walls, props, machines)
+    if (def.signs[key]) { blip(660); openDialog(null, def.signs[key]); return true; }
     return false;
   };
 
@@ -1379,14 +1421,17 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
 
     const interior = rows()[0][0] === '#';
     const MW = mapW() * TILE, MH = mapH() * TILE;
+    const VH = H - HUD_H; // world viewport: the strip below the HUD bar
     let camX = Math.round(player.px - W / 2 + 8);
-    let camY = Math.round(player.py - H / 2 + 8);
+    let camY = Math.round(player.py - VH / 2 + 8);
     camX = Math.max(0, Math.min(camX, Math.max(0, MW - W)));
-    camY = Math.max(0, Math.min(camY, Math.max(0, MH - H)));
+    camY = Math.max(0, Math.min(camY, Math.max(0, MH - VH)));
     if (MW < W) camX = -(W - MW) / 2;
-    if (MH < H) camY = -(H - MH) / 2;
+    if (MH < VH) camY = -(VH - MH) / 2;
 
     ctx.fillStyle = PAL[0]; ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(0, HUD_H); // world space sits below the HUD from here on
 
     const x0 = Math.max(0, Math.floor(camX / TILE));
     const y0 = Math.max(0, Math.floor(camY / TILE));
@@ -1497,6 +1542,8 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
     }
     }
 
+    ctx.restore(); // back to screen space for the HUD and overlays
+
     // HUD
     ctx.fillStyle = UI[3]; ctx.fillRect(0, 0, W, 10);
     ctx.fillStyle = UI[0]; ctx.fillRect(0, 10, W, 1);
@@ -1546,7 +1593,7 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
           if (it) {
             const t2 = s.t / 22;
             const e2 = t2 * t2;
-            const sx2 = s.sx - camX, sy2 = s.sy - camY;
+            const sx2 = s.sx - camX, sy2 = s.sy - camY + HUD_H;
             const txp = bx + bw * 0.45, typ = by + 8;
             const x = sx2 + (txp - sx2) * e2;
             const y = sy2 + (typ - sy2) * e2 - Math.sin(Math.PI * t2) * 16;
