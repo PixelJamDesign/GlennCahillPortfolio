@@ -1605,7 +1605,9 @@ I have always had a passion for gaming and I wanted to make a playable CV. Enjoy
             const txp = bx + bw * 0.45, typ = by + 8;
             const x = sx2 + (txp - sx2) * e2;
             const y = sy2 + (typ - sy2) * e2 - Math.sin(Math.PI * t2) * 16;
-            const sc = (1 - 0.6 * e2) / 3;
+            // balloon up mid-flight so the item is clearly readable, then
+            // shrink back down as it drops into the bag
+            const sc = (1 - 0.6 * e2) / 3 + Math.sin(Math.PI * t2) * 0.5;
             ctx.imageSmoothingEnabled = false;
             ctx.drawImage(it, x - (it.width * sc) / 2, y - (it.height * sc) / 2, it.width * sc, it.height * sc);
           }
