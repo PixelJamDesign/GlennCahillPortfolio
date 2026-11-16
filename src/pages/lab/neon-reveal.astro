@@ -1,0 +1,64 @@
+---
+// Preview page for NeonReveal. Not linked from anywhere and kept out of search.
+import '../../styles/global.css';
+import NeonReveal from '../../components/react/NeonReveal.jsx';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Neon Reveal</title>
+    <style is:global>
+      body { background: var(--ink-0); color: var(--text-primary); font-family: var(--font); margin: 0; }
+      main { max-width: 1100px; margin: 0 auto; padding: 64px 16px 160px; display: grid; gap: 96px; }
+      .label { color: var(--text-low); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 16px; }
+      .panel { padding: 72px 48px 64px; background: var(--ink-1); border: 1px solid var(--line); border-radius: 20px; }
+      .panel h2 { margin: 0 0 20px; }
+      .panel p { color: var(--text-mid); max-width: 56ch; margin: 0 0 16px; }
+      .panel a { color: var(--g-pink); }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+      .card { padding: 40px 32px 32px 48px; background: var(--ink-1); border: 1px solid var(--line); border-radius: 16px; min-height: 220px; }
+      .card h3 { margin: 0 0 12px; }
+      .card p { color: var(--text-mid); margin: 0; }
+      .spacer { height: 70vh; display: grid; place-items: center; color: var(--text-low); }
+      @media (max-width: 600px) { .panel { padding: 56px 24px 40px; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section>
+        <p class="label">Down, plays on load. Click it to run it again</p>
+        <NeonReveal client:load className="panel">
+          <h2 class="t-h2">Design systems that ship.</h2>
+          <p class="t-body-lg">
+            Twenty years of turning messy component libraries into tokens, primitives and recipes that
+            engineers actually want to use.
+          </p>
+          <p class="t-body">Links still work as links: <a href="#cards">jump to the cards</a>.</p>
+        </NeonReveal>
+      </section>
+
+      <div class="spacer">Scroll down</div>
+
+      <section id="cards">
+        <p class="label">Plays when scrolled into view. Different directions</p>
+        <div class="grid">
+          <NeonReveal client:visible className="card" direction="right" thickness={2}>
+            <h3 class="t-h5">Right</h3>
+            <p>Tube on the left edge, light travels across.</p>
+          </NeonReveal>
+          <NeonReveal client:visible className="card" direction="up" thickness={2} delay={350}>
+            <h3 class="t-h5">Up</h3>
+            <p>Tube on the bottom edge, light climbs.</p>
+          </NeonReveal>
+          <NeonReveal client:visible className="card" thickness={2} delay={550} colors={['#ff4fff', '#b02fff']}>
+            <h3 class="t-h5">Down, pink only</h3>
+            <p>Two colours instead of the full brand gradient.</p>
+          </NeonReveal>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
