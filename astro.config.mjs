@@ -12,7 +12,11 @@ const isBuild = process.argv.includes('build');
 
 export default defineConfig({
   site: 'https://glenncahill.com',
-  integrations: isBuild ? [] : [react(), keystatic()],
+  // React is on in every build so interactive components (src/components/react,
+  // e.g. React Bits pieces) can run as islands on the live site. React's JS only
+  // ships to pages that use one with a client:* directive. Keystatic stays
+  // dev-only.
+  integrations: isBuild ? [react()] : [react(), keystatic()],
   // each ## heading in a case study becomes its own <section>: the journey
   // template lays those out as full-screen chapters
   markdown: { remarkPlugins: [remarkSectionize] },
