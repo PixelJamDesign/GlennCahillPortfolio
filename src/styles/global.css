@@ -329,19 +329,6 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
   overflow: hidden;
 }
 
-/* The hero is a NeonReveal: everything inside sits in .hero-stage, which the
-   neon light reveals top to bottom. The stage takes over the hero's layout and
-   is the box the absolute layers (aurora, particles, portrait) fill. Its own
-   background gives the portrait's color-dodge something to blend with, since
-   the reveal mask isolates the stage from the page behind it. */
-.hero-stage {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  background: var(--ink-0);
-}
-
 .aurora {
   position: absolute;
   inset: 0;

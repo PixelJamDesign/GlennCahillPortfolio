@@ -2,7 +2,6 @@
 import '../styles/global.css';
 import Button from '../components/Button.astro';
 import PageVeil from '../components/PageVeil.astro';
-import NeonReveal from '../components/react/NeonReveal.jsx';
 import { videoSources } from '../lib/video';
 import { getWork } from '../lib/work';
 
@@ -170,21 +169,7 @@ const brands = [
       </div>
     </nav>
 
-    <NeonReveal
-      client:load
-      as="header"
-      id="top"
-      className="hero"
-      contentClassName="hero-stage"
-      trigger="mount"
-      delay={250}
-      duration={2100}
-      inset={0}
-      reach={0.75}
-      spill={0.3}
-      feather={0.3}
-      style={{ cursor: 'auto' }}
-    >
+    <header class="hero" id="top">
       <div class="aurora" aria-hidden="true">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
@@ -220,7 +205,7 @@ const brands = [
         Scroll
         <span class="bar"></span>
       </div>
-    </NeonReveal>
+    </header>
 
     <div class="marquee" aria-hidden="true">
       <div class="marquee-track">
@@ -499,7 +484,6 @@ const brands = [
       }
 
       // Split hero title into animated chars
-      const TITLE_START = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.08 : 1.55;
       document.querySelectorAll('.hero-title .line').forEach((line, li) => {
         const text = line.textContent.trim();
         line.textContent = '';
@@ -507,8 +491,7 @@ const brands = [
           const s = document.createElement('span');
           s.className = 'char';
           s.textContent = ch;
-          // starts as the neon light reaches the title, not before
-          s.style.animationDelay = `${TITLE_START + li * 0.1 + i * 0.035}s`;
+          s.style.animationDelay = `${0.08 + li * 0.1 + i * 0.035}s`;
           line.appendChild(s);
         });
       });
