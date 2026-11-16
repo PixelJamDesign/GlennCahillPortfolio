@@ -58,11 +58,15 @@ export default function NeonReveal({
   inset = 6, // gap between the edge and the tube, px
   glow = 1, // bloom strength
   reach = 0.85, // how far the light spill travels, share of the depth
+  spill = 0.5, // strength of the light falling on the content, 0 to 1
   feather = 0.22, // softness of the reveal edge, share of the depth
   hum = true, // faint flutter and the odd dip once lit
   interactive = true, // click to re-ignite
   maxDpr = 2,
+  as: Tag = 'div', // element to render, e.g. 'header' or 'section'
+  id,
   className = '',
+  contentClassName = '', // class for the inner wrapper that gets revealed
   style,
 }) {
   const rootRef = useRef(null);
@@ -157,11 +161,12 @@ export default function NeonReveal({
       // Light spilling onto the content. Painted first, then shaped with two
       // alpha masks (fade with depth, fade past the tube ends). The glass above
       // is redrawn afterwards because the masks wipe it.
+      // kept inside the tube's span: anything wider gets cut off hard at the
+      // component's edge and the glow reads as a box
       const depth = D * reach * Math.min(1, 0.06 + p);
-      const spread = Math.min(L * 0.12, D * 0.25);
-      ctx.globalAlpha = Math.min(1, 0.5 * bright * glow);
+      ctx.globalAlpha = Math.min(1, spill * bright * glow);
       ctx.fillStyle = along;
-      ctx.fillRect(x0 - spread, ty, x1 - x0 + spread * 2, depth);
+      ctx.fillRect(x0, ty, x1 - x0, depth);
 
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'destination-in';
@@ -171,11 +176,10 @@ export default function NeonReveal({
       fall.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = fall;
       ctx.fillRect(0, 0, L, D);
-      const ends = ctx.createLinearGradient(x0 - spread, 0, x1 + spread, 0);
-      const e = Math.min(0.45, spread / Math.max(1, x1 - x0 + spread * 2));
+      const ends = ctx.createLinearGradient(x0, 0, x1, 0);
       ends.addColorStop(0, 'rgba(0,0,0,0)');
-      ends.addColorStop(e, 'rgba(0,0,0,1)');
-      ends.addColorStop(1 - e, 'rgba(0,0,0,1)');
+      ends.addColorStop(0.3, 'rgba(0,0,0,1)');
+      ends.addColorStop(0.7, 'rgba(0,0,0,1)');
       ends.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = ends;
       ctx.fillRect(0, 0, L, D);
@@ -199,8 +203,8 @@ export default function NeonReveal({
           ctx.shadowColor = colors[Math.floor(colors.length / 2)];
           ctx.shadowBlur = 14;
           ctx.beginPath();
-          ctx.moveTo(x0, fy);
-          ctx.lineTo(x1, fy);
+          ctx.moveTo(x0 + (x1 - x0) * 0.15, fy);
+          ctx.lineTo(x1 - (x1 - x0) * 0.15, fy);
           ctx.stroke();
           ctx.shadowBlur = 0;
         }
@@ -371,19 +375,21 @@ export default function NeonReveal({
     };
     // colors is compared by value through colorKey
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorKey, direction, trigger, threshold, delay, duration, thickness, length, inset, glow, reach, feather, hum, interactive, maxDpr]);
+  }, [colorKey, direction, trigger, threshold, delay, duration, thickness, length, inset, glow, reach, feather, spill, hum, interactive, maxDpr]);
 
   const maskDir = MASK_DIR[direction] || MASK_DIR.down;
   const mask = `linear-gradient(${maskDir}, #000 var(--nr-a), transparent var(--nr-b))`;
 
   return (
-    <div
+    <Tag
       ref={rootRef}
+      id={id}
       className={`neon-reveal ${className}`.trim()}
       style={{ position: 'relative', isolation: 'isolate', cursor: interactive ? 'pointer' : undefined, ...style }}
     >
       <div
         ref={contentRef}
+        className={contentClassName || undefined}
         style={{
           position: 'relative',
           zIndex: 0,
@@ -408,6 +414,6 @@ export default function NeonReveal({
           mixBlendMode: 'screen',
         }}
       />
-    </div>
+    </Tag>
   );
 }
