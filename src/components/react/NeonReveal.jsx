@@ -54,7 +54,7 @@ export default function NeonReveal({
   delay = 150, // ms before the first flicker
   duration = 2200, // ms for the light to cross the component
   thickness = 3, // tube thickness in px
-  length = 1, // tube length as a share of the edge
+  length = 1, // tube length as a share of the edge; 1 runs it edge to edge
   inset = 6, // gap between the edge and the tube, px
   glow = 1, // bloom strength
   reach = 0.85, // how far the light spill travels, share of the depth
@@ -133,8 +133,10 @@ export default function NeonReveal({
       }
 
       const ty = inset + thickness * 1.5;
-      const pad = thickness * 3;
-      const fullHalf = (L / 2 - pad) * length;
+      // full length runs off both edges; shorter tubes keep their rounded ends clear
+      const full = length >= 1;
+      const pad = full ? -thickness : thickness * 3;
+      const fullHalf = (L / 2 - pad) * Math.min(1, length);
       const half = fullHalf * len;
       const x0 = L / 2 - half;
       const x1 = L / 2 + half;
@@ -178,8 +180,9 @@ export default function NeonReveal({
       ctx.fillRect(0, 0, L, D);
       const ends = ctx.createLinearGradient(x0, 0, x1, 0);
       ends.addColorStop(0, 'rgba(0,0,0,0)');
-      ends.addColorStop(0.3, 'rgba(0,0,0,1)');
-      ends.addColorStop(0.7, 'rgba(0,0,0,1)');
+      const ef = full ? 0.04 : 0.3;
+      ends.addColorStop(ef, 'rgba(0,0,0,1)');
+      ends.addColorStop(1 - ef, 'rgba(0,0,0,1)');
       ends.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = ends;
       ctx.fillRect(0, 0, L, D);
