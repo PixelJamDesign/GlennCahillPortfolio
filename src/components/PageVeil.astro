@@ -1,0 +1,43 @@
+---
+// Ink veil covering full page loads: fades to ink on exit, lifts on arrival.
+// Client-router navigations inside /work are left to their morph transition.
+---
+
+<div class="page-veil" aria-hidden="true" transition:persist="veil"></div>
+
+<script>
+  const veil = document.querySelector('.page-veil') as HTMLElement;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let leaving = false;
+  document.addEventListener('click', (e) => {
+    // another handler (the view-transition router) already took this click:
+    // navigating a second time adds a duplicate history entry, and Back then
+    // lands on the same page again
+    if (e.defaultPrevented || leaving) return;
+    const a = (e.target as HTMLElement).closest('a');
+    if (!a || !veil) return;
+    const href = a.getAttribute('href');
+    if (!href || href.startsWith('#') || a.target === '_blank' || a.hasAttribute('download')) return;
+    const me = e as MouseEvent;
+    if (me.metaKey || me.ctrlKey || me.shiftKey || me.altKey || me.button !== 0) return;
+    const url = new URL(a.href, location.href);
+    if (url.origin !== location.origin) return;
+    if (url.pathname === location.pathname && url.hash) return; // in-page anchor
+    const routerHere = !!document.querySelector('meta[name="astro-view-transitions-enabled"]');
+    const crossDoc = 'CSSViewTransitionRule' in window; // browser can morph across full loads
+    const routerDest = url.pathname.startsWith('/work');
+    if (routerDest && (routerHere || crossDoc)) return; // the view-transition morph owns this one
+    if (reduced) return;
+    e.preventDefault();
+    leaving = true;
+    veil.classList.add('on');
+    setTimeout(() => { location.href = url.href; }, 300);
+  });
+
+  // arriving (or returning via bfcache): lift the veil and accept clicks again
+  addEventListener('pageshow', () => {
+    leaving = false;
+    veil && veil.classList.remove('on');
+  });
+</script>

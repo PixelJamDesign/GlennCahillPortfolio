@@ -10,9 +10,10 @@
 <script>
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  document.querySelectorAll<HTMLCanvasElement>('canvas[data-particles]').forEach((canvas) => {
+  const initParticles = () => document.querySelectorAll<HTMLCanvasElement>('canvas[data-particles]').forEach((canvas) => {
     const host = canvas.parentElement;
-    if (!host || reduceMotion) return;
+    if (!host || reduceMotion || canvas.dataset.init) return;
+    canvas.dataset.init = '1';
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -43,7 +44,14 @@
 
     size();
     seed();
-    addEventListener('resize', () => { size(); seed(); }, { passive: true });
+    // height-only resizes are the mobile toolbar sliding in and out
+    let lastW = innerWidth;
+    addEventListener('resize', () => {
+      if (innerWidth === lastW) return;
+      lastW = innerWidth;
+      size();
+      seed();
+    }, { passive: true });
 
     const GLOW_R = 220;
     let mx = -9999, my = -9999;
@@ -54,7 +62,18 @@
     });
     host.addEventListener('pointerleave', () => { mx = my = -9999; });
 
+    // the canvas keeps animating even when the hero has scrolled away, which
+    // costs a frame's work for something nobody can see — on a phone that is
+    // the difference between smooth scrolling and stutter
+    let visible = true;
+    let running = false;
+    new IntersectionObserver((entries) => {
+      visible = entries[0].isIntersecting;
+      if (visible && !running) { running = true; requestAnimationFrame(tick); }
+    }).observe(host);
+
     const tick = (t: number) => {
+      if (!visible) { running = false; return; }
       ctx.clearRect(0, 0, W, H);
       for (const p of parts) {
         p.y -= p.vy;
@@ -83,6 +102,9 @@
       }
       requestAnimationFrame(tick);
     };
+    running = true;
     requestAnimationFrame(tick);
   });
+  initParticles();
+  document.addEventListener('astro:page-load', initParticles);
 </script>

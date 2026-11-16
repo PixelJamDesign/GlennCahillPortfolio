@@ -1,13 +1,14 @@
 ---
-import { getCollection } from 'astro:content';
+import { getWork } from '../../lib/work';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import HeroParticles from '../../components/HeroParticles.astro';
+import { videoSources } from '../../lib/video';
 
-const projects = (await getCollection('work')).sort((a, b) => a.data.order - b.data.order);
+const projects = await getWork();
 const tags = [...new Set(projects.map((p) => p.data.tag))];
 ---
 
-<BaseLayout title="Work | Glenn Cahill" description="Case studies — design systems, product design, UI and branding by Glenn Cahill.">
+<BaseLayout title="Work | Glenn Cahill" description="Case studies — design systems, product design, UI and branding by Glenn Cahill." router={true}>
   <header class="cs-hero">
     <div class="aurora" aria-hidden="true">
       <div class="blob blob-1"></div>
@@ -34,17 +35,22 @@ const tags = [...new Set(projects.map((p) => p.data.tag))];
     <div class="work-grid" id="workGrid">
       {projects.map((p, i) => (
         <a
-          class={`work-card reveal${i === 0 ? ' feature' : ''}`}
+          class={`work-card neon reveal${i === 0 ? ' feature' : ''}`}
           style={`--d: ${(i % 2) * 0.1}s`}
           href={`/work/${p.id}`}
           data-tag={p.data.tag}
         >
           <div class="work-media">
-            <img src={p.data.cover} alt={p.data.title} loading={i < 2 ? 'eager' : 'lazy'} />
+            <img src={p.data.cover} alt={p.data.title} loading={i < 2 ? 'eager' : 'lazy'} data-cover={p.id} />
+            {p.data.video && (
+              <video muted loop playsinline preload="metadata" aria-hidden="true">
+                {videoSources(p.data.video).map((s) => <source src={s.src} type={s.type} />)}
+              </video>
+            )}
           </div>
           <div class="work-info">
             <div>
-              <span class="tag">{p.data.tag}</span>
+              <span class="tag">{p.data.draft ? `Draft — ${p.data.tag}` : p.data.tag}</span>
               <h3>{p.data.title}</h3>
             </div>
             <span class="work-arrow" aria-hidden="true">
@@ -53,6 +59,7 @@ const tags = [...new Set(projects.map((p) => p.data.tag))];
               </svg>
             </span>
           </div>
+          <i class="neon-edge" aria-hidden="true"></i>
         </a>
       ))}
     </div>
@@ -61,25 +68,48 @@ const tags = [...new Set(projects.map((p) => p.data.tag))];
   </section>
 
   <script>
-    const buttons = document.querySelectorAll<HTMLButtonElement>('.filter-btn');
-    const cards = document.querySelectorAll<HTMLAnchorElement>('#workGrid .work-card');
-    const empty = document.getElementById('workEmpty');
+    const initFilters = () => {
+      const buttons = document.querySelectorAll<HTMLButtonElement>('.filter-btn');
+      const cards = document.querySelectorAll<HTMLAnchorElement>('#workGrid .work-card');
+      const empty = document.getElementById('workEmpty');
 
-    buttons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const filter = btn.dataset.filter;
-        buttons.forEach((b) => {
-          b.classList.toggle('active', b === btn);
-          b.setAttribute('aria-pressed', String(b === btn));
+      buttons.forEach((btn) => {
+        if (btn.dataset.bound) return;
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', () => {
+          const filter = btn.dataset.filter;
+          buttons.forEach((b) => {
+            b.classList.toggle('active', b === btn);
+            b.setAttribute('aria-pressed', String(b === btn));
+          });
+          let shown = 0;
+          cards.forEach((card) => {
+            const show = filter === 'all' || card.dataset.tag === filter;
+            card.toggleAttribute('hidden', !show);
+            if (show) shown++;
+          });
+          if (empty) empty.hidden = shown > 0;
         });
-        let shown = 0;
-        cards.forEach((card) => {
-          const show = filter === 'all' || card.dataset.tag === filter;
-          card.toggleAttribute('hidden', !show);
-          if (show) shown++;
-        });
-        if (empty) empty.hidden = shown > 0;
       });
-    });
+    };
+    initFilters();
+    document.addEventListener('astro:page-load', initFilters);
+
+    // a card with a hero video plays it silently while hovered, as on the
+    // homepage (pointer devices only: a phone has no hover)
+    if (matchMedia('(hover: hover)').matches && !(window as any).__workHover) {
+      (window as any).__workHover = true;
+      document.addEventListener('pointerover', (e) => {
+        const card = (e.target as HTMLElement).closest?.('.work-card');
+        if (!card || card.contains(e.relatedTarget as Node)) return;
+        card.querySelector('video')?.play().catch(() => {});
+      });
+      document.addEventListener('pointerout', (e) => {
+        const card = (e.target as HTMLElement).closest?.('.work-card');
+        if (!card || card.contains(e.relatedTarget as Node)) return;
+        const v = card.querySelector('video');
+        if (v) { v.pause(); v.currentTime = 0; }
+      });
+    }
   </script>
 </BaseLayout>

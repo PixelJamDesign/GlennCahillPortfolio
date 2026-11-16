@@ -1,0 +1,15 @@
+{
+  "Background": [
+    { "q": "What was the challenge?", "hint": "The core problem, limitation or opportunity that led to the work." },
+    { "q": "What informed the direction?", "hint": "Research, user feedback, business requirements, analytics, stakeholder input or existing product constraints." }
+  ],
+  "The work": [
+    { "q": "What was my approach?", "hint": "Your process, thinking, collaboration and how you moved from problem to solution." },
+    { "q": "What did I design?", "hint": "The actual work: flows, wireframes, UI, components, prototypes, design systems, motion, testing, etc." },
+    { "q": "What were the key considerations?", "hint": "Accessibility, scalability, technical constraints, responsive behaviour, performance, brand consistency and so on." }
+  ],
+  "The result": [
+    { "q": "What was the outcome?", "hint": "What shipped, changed or improved. This works whether you have hard metrics or only qualitative outcomes." },
+    { "q": "What did this enable?", "hint": "The longer-term value: reusable patterns, faster delivery, future product work, team efficiency, scalability, learnings, etc." }
+  ]
+}

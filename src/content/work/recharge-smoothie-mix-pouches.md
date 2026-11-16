@@ -1,9 +1,41 @@
 ---
-title: "Recharge Smoothie Mix Pouches"
-tag: "Graphic Design"
-cover: "/images/work/pixel-jam/recharge-smoothie-mix-pouches/cover.webp"
-excerpt: "Packaging for Pure Recharge's smoothie mixes. While the competition crowded their pouches, we let the ingredients and the colour do the selling."
-order: 16
+title: Recharge Smoothie Mix Pouches
+tag: Graphic Design
+cover: /images/work/recharge-smoothie-mix-pouches/cover.webp
+excerpt: Packaging for Pure Recharge's smoothie mixes. While the competition crowded their pouches, we let the ingredients and the colour do the selling.
+order: 17
+questions:
+  - chapter: Background
+    question: What was the challenge?
+    show: true
+    answer: ""
+  - chapter: Background
+    question: What informed the direction?
+    show: true
+    answer: ""
+  - chapter: The work
+    question: What was my approach?
+    show: true
+    answer: ""
+  - chapter: The work
+    question: What did I design?
+    show: true
+    answer: ""
+  - chapter: The work
+    question: What were the key considerations?
+    show: true
+    answer: ""
+  - chapter: The result
+    question: What was the outcome?
+    show: true
+    answer: ""
+  - chapter: The result
+    question: What did this enable?
+    show: true
+    answer: ""
+notes: |-
+  The work: image suggestion: a shelf-lineup shot of all pouch colourways together, showing the colour-matches-smoothie system at a glance
+  The result: image suggestion: a real photo of the printed pouches (not renders) if they exist — printed packaging in daylight always beats a mockup
 ---
 
 ## Background
@@ -15,7 +47,7 @@ Two requirements were fixed from the start:
 - The ingredients had to be displayed prominently on the front of the pouch.
 - Each pouch's colour had to complement the smoothie inside it.
 
-![](/images/work/pixel-jam/recharge-smoothie-mix-pouches/01.jpeg)
+![](/images/work/recharge-smoothie-mix-pouches/01.webp)
 
 ## The work
 
@@ -23,12 +55,8 @@ I surveyed the competition's packaging and found shelf after shelf of dense, bus
 
 The splat graphic from Pure Recharge's branding became the connective thread, running across the smoothie pouches and carrying over to the açai sorbet and nice cream ranges, so the whole family reads as one brand on the shelf.
 
-<!-- image suggestion: a shelf-lineup shot of all pouch colourways together, showing the colour-matches-smoothie system at a glance -->
-
-![](/images/work/pixel-jam/recharge-smoothie-mix-pouches/02.jpeg)
+![](/images/work/recharge-smoothie-mix-pouches/02.webp)
 
 ## The result
 
 The finished pouches gave these smoothie mixes a proper identity, brighter and more confident than anything beside them. I was chuffed with the outcome, and so was Dara at Pure Recharge, which is the review that counts.
-
-<!-- image suggestion: a real photo of the printed pouches (not renders) if they exist — printed packaging in daylight always beats a mockup -->

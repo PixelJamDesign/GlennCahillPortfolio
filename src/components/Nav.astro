@@ -1,7 +1,7 @@
 ---
 import Button from './Button.astro';
 ---
-<nav class="nav" id="nav">
+<nav class="nav" id="nav" transition:persist="nav">
   <div class="nav-inner">
     <a href="/" class="nav-logo" aria-label="Glenn Cahill — home">
       <img src="/images/logo.svg" alt="" width="42" height="42" />
@@ -10,7 +10,7 @@ import Button from './Button.astro';
       <a class="nav-link" href="/#about"><i>01</i>About</a>
       <a class="nav-link" href="/work"><i>02</i>Work</a>
       <a class="nav-link" href="/#career"><i>03</i>Career</a>
-      <a class="nav-link" href="/#passions"><i>04</i>Passions</a>
+      <a class="nav-link" href="/#passions"><i>04</i>Passion Projects</a>
       <Button href="/#contact">Let's talk</Button>
     </div>
   </div>
@@ -19,16 +19,39 @@ import Button from './Button.astro';
 <script>
   const nav = document.getElementById('nav');
   let lastY = 0;
-  addEventListener(
-    'scroll',
-    () => {
-      const y = scrollY;
-      if (nav) {
-        nav.classList.toggle('scrolled', y > 20);
-        nav.classList.toggle('hidden', y > lastY && y > 300);
-      }
-      lastY = y;
-    },
-    { passive: true }
-  );
+  // case studies read as full screens, so the nav stays out of the way there:
+  // it only comes back at the top of the page, or when the pointer reaches the
+  // top edge of the window. Everywhere else it hides on the way down and
+  // returns on the way up.
+  let journey = false;
+  let pointerAtTop = false;
+
+  const update = () => {
+    if (!nav) return;
+    const y = scrollY;
+    nav.classList.toggle('scrolled', y > 20);
+    // stays away while a gallery picture is full bleed, or it would slide in
+    // over the close button the moment the cursor goes up to reach it
+    const focus = !!document.querySelector('.cs-gallery.is-focus');
+    if (journey) nav.classList.toggle('hidden', focus || (y > 10 && !pointerAtTop));
+    else nav.classList.toggle('hidden', y > lastY && y > 300);
+    lastY = y;
+  };
+
+  const setMode = () => {
+    journey = !!document.querySelector('.cs-journey');
+    if (!journey) pointerAtTop = false;
+    update();
+  };
+
+  addEventListener('scroll', update, { passive: true });
+  addEventListener('pointermove', (e) => {
+    if (!journey || e.pointerType !== 'mouse') return;
+    const atTop = e.clientY < 90;
+    if (atTop === pointerAtTop) return;
+    pointerAtTop = atTop;
+    update();
+  }, { passive: true });
+  document.addEventListener('astro:page-load', setMode);
+  setMode();
 </script>

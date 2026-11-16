@@ -1,25 +1,29 @@
 ---
 import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
 import Nav from '../components/Nav.astro';
+import PageVeil from '../components/PageVeil.astro';
 import Footer from '../components/Footer.astro';
 
 interface Props {
   title: string;
   description?: string;
+  router?: boolean;
 }
 
-const { title, description = 'Glenn Cahill — design systems, UI/UX and motion. Twenty years of shipping digital products.' } = Astro.props;
+const { title, description = 'Glenn Cahill — design systems, UI/UX and motion. Twenty years of shipping digital products.', router = false } = Astro.props;
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
     <link rel="manifest" href="/site.webmanifest" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -29,12 +33,14 @@ const { title, description = 'Glenn Cahill — design systems, UI/UX and motion.
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    {router && <ClientRouter />}
   </head>
 
   <body>
-    <div class="grain" aria-hidden="true"></div>
-    <div class="progress" aria-hidden="true"></div>
-    <div class="cursor-glow" aria-hidden="true"></div>
+    <PageVeil />
+    <div class="grain" aria-hidden="true" transition:persist="grain"></div>
+    <div class="progress" aria-hidden="true" transition:persist="progress"></div>
+    <div class="cursor-glow" aria-hidden="true" transition:persist="glow"></div>
 
     <Nav />
 
@@ -52,6 +58,35 @@ const { title, description = 'Glenn Cahill — design systems, UI/UX and motion.
         },
         { passive: true }
       );
+
+      // a looping hero video keeps decoding frames after it scrolls away, which
+      // a phone pays for out of the same budget as the scroll itself
+      const videoIO = new IntersectionObserver(
+        (entries) => entries.forEach((en) => {
+          const v = en.target as HTMLVideoElement;
+          if (en.isIntersecting) v.play().catch(() => {});
+          else v.pause();
+        }),
+        { rootMargin: '10% 0px' }
+      );
+      // Safety net for looping: `loop` alone stopped working on the hero clips
+      // once they carried an audio track, so if one ever reaches the end we
+      // send it back to the start ourselves.
+      const keepLooping = (v: HTMLVideoElement) => {
+        if (!v.loop || v.dataset.loopFix) return;
+        v.dataset.loopFix = '1';
+        v.addEventListener('ended', () => {
+          v.currentTime = 0;
+          v.play().catch(() => {});
+        });
+      };
+      const watchVideos = () =>
+        document.querySelectorAll<HTMLVideoElement>('video[autoplay]').forEach((v) => {
+          keepLooping(v);
+          videoIO.observe(v);
+        });
+      watchVideos();
+      document.addEventListener('astro:page-load', watchVideos);
 
       const glow = document.querySelector('.cursor-glow') as HTMLElement | null;
       if (glow && matchMedia('(pointer: fine)').matches) {
@@ -73,7 +108,77 @@ const { title, description = 'Glenn Cahill — design systems, UI/UX and motion.
         },
         { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
       );
-      document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+      // re-observe after client-side navigations (view transitions) too
+      const observeReveals = () => document.querySelectorAll('.reveal:not(.in)').forEach((el) => io.observe(el));
+      observeReveals();
+      document.addEventListener('astro:page-load', observeReveals);
+
+      // pages reached via the view-transition morph start their hero
+      // choreography only after the flight lands (see .vt-arrival in CSS)
+      document.addEventListener('astro:after-swap', () => {
+        document.documentElement.classList.add('vt-arrival');
+        try { sessionStorage.removeItem('cover-morph'); } catch {}
+      });
+      // same for full page loads that arrived via a cross-document cover morph
+      // (homepage → case study); pagereveal fires before the first paint
+      addEventListener('pagereveal', (e: any) => {
+        if (!e.viewTransition) return;
+        let morph = null;
+        try { morph = sessionStorage.getItem('cover-morph'); sessionStorage.removeItem('cover-morph'); } catch {}
+        if (morph && document.querySelector('.cs-cinema-bg img, .cs-cinema-bg video')) {
+          document.documentElement.classList.add('vt-arrival');
+        } else {
+          e.viewTransition.skipTransition();
+        }
+      });
+
+      // work cards with a video: play silently while hovered (pointer devices only)
+      if (matchMedia('(hover: hover)').matches) {
+        document.addEventListener('pointerover', (e) => {
+          const card = (e.target as HTMLElement).closest?.('.work-card');
+          if (!card || card.contains(e.relatedTarget as Node)) return;
+          card.querySelector<HTMLVideoElement>('.work-media video')?.play().catch(() => {});
+        });
+        document.addEventListener('pointerout', (e) => {
+          const card = (e.target as HTMLElement).closest?.('.work-card');
+          if (!card || card.contains(e.relatedTarget as Node)) return;
+          const v = card.querySelector<HTMLVideoElement>('.work-media video');
+          if (v) { v.pause(); v.currentTime = 0; }
+        });
+      }
+
+      // Shared-element hygiene: if every card carried a transition name, all
+      // sixteen covers would fly as unmatched ghost snapshots. Instead only
+      // the tapped card is named, just in time for the capture.
+      const clearCardNames = () =>
+        document.querySelectorAll<HTMLElement>('img[data-cover]').forEach((el) => {
+          el.style.viewTransitionName = '';
+        });
+      document.addEventListener('click', (e) => {
+        const link = (e.target as HTMLElement).closest?.('.work-card, .cs-pager-link, .cs-next-link');
+        const img = link?.querySelector<HTMLElement>('img[data-cover]');
+        if (!img) return;
+        clearCardNames();
+        img.style.viewTransitionName = `cover-${img.dataset.cover}`;
+        // moving between case studies: the current hero shouldn't fly as a
+        // second object; let it fade with the page
+        document.querySelectorAll<HTMLElement>('.cs-cinema-bg img, .cs-cinema-bg video').forEach((el) => {
+          el.style.viewTransitionName = 'none';
+        });
+        try { sessionStorage.setItem('cover-morph', img.dataset.cover!); } catch {}
+      });
+      // returning to the listing: pre-name the card we're arriving from so the
+      // hero flies back down into it
+      document.addEventListener('astro:before-swap', (e) => {
+        const hero = document.querySelector('.cs-cinema-bg img, .cs-cinema-bg video');
+        if (!hero) return;
+        const heroName = getComputedStyle(hero).viewTransitionName;
+        if (!heroName || heroName === 'none') return;
+        const slug = heroName.replace(/^cover-/, '');
+        const target = (e as any).newDocument?.querySelector(`.work-media img[data-cover="${slug}"]`);
+        if (target) target.style.viewTransitionName = heroName;
+      });
+
     </script>
   </body>
 </html>

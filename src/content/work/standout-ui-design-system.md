@@ -1,9 +1,41 @@
 ---
-title: "StandOut UI — Design System"
-tag: "Design System"
-cover: "/images/work/pixel-jam/standout-ui-design-system/cover.webp"
-excerpt: "My own design system, built in my spare time. Twenty years of best practice poured into one Figma library, on its way to becoming a Webflow component kit anyone can build with."
-order: 12
+title: StandOut UI — Design System
+tag: Design System
+cover: /images/work/standout-ui-design-system/cover.webp
+excerpt: My own design system, built in my spare time. Twenty years of best practice poured into one Figma library, on its way to becoming a Webflow component kit anyone can build with.
+order: 13
+questions:
+  - chapter: Background
+    question: What was the challenge?
+    show: true
+    answer: ""
+  - chapter: Background
+    question: What informed the direction?
+    show: true
+    answer: ""
+  - chapter: The work
+    question: What was my approach?
+    show: true
+    answer: ""
+  - chapter: The work
+    question: What did I design?
+    show: true
+    answer: ""
+  - chapter: The work
+    question: What were the key considerations?
+    show: true
+    answer: ""
+  - chapter: The result
+    question: What was the outcome?
+    show: true
+    answer: ""
+  - chapter: The result
+    question: What did this enable?
+    show: true
+    answer: ""
+notes: |-
+  The work: image suggestion: the variables panel in Figma showing the token structure — for a design system audience this IS the product shot
+  The work: image suggestion: one component's full variant matrix (states × sizes × themes) laid out on a single frame
 ---
 
 ## Background
@@ -23,7 +55,7 @@ Use the full suite of what Figma offers, properly:
 
 Then carry the exact same variable structure and naming conventions into the Webflow template, so the two platforms stay in lockstep.
 
-![](/images/work/pixel-jam/standout-ui-design-system/01.png)
+![](/images/work/standout-ui-design-system/01.webp)
 
 ## The work
 
@@ -42,10 +74,7 @@ Then comes documentation: guidelines that break each component into small identi
 
 Maintaining a system is its own discipline. I structure components so new features can be added and tested with minimal impact, with mandatory testing and documentation on every update. The best release process I've run pairs that with a voting forum where designers suggest and upvote features, shipped in weekly pushes.
 
-<!-- image suggestion: the variables panel in Figma showing the token structure — for a design system audience this IS the product shot -->
-<!-- image suggestion: one component's full variant matrix (states × sizes × themes) laid out on a single frame -->
-
-![](/images/work/pixel-jam/standout-ui-design-system/02.png)
+![](/images/work/standout-ui-design-system/02.webp)
 
 ## The result
 
@@ -53,4 +82,4 @@ StandOut hasn't officially launched yet, and honestly, the building is half the 
 
 Design systems are the corner of this industry I get genuinely evangelical about. If you want to talk through my process in more detail, I'd enjoy that conversation.
 
-![](/images/work/pixel-jam/standout-ui-design-system/03.png)
+![](/images/work/standout-ui-design-system/03.webp)

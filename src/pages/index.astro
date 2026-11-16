@@ -1,32 +1,35 @@
 ---
 import '../styles/global.css';
 import Button from '../components/Button.astro';
+import PageVeil from '../components/PageVeil.astro';
+import { videoSources } from '../lib/video';
+import { getWork } from '../lib/work';
 
-const work = [
+const work: { slug: string; title: string; tag: string; img: string; video?: string; feature?: boolean }[] = [
   {
     slug: 'standout-ui-design-system',
     title: 'StandOut UI — Design System',
     tag: 'Design System',
     img: '/images/work/pixel-jam/standout-ui.webp',
-    feature: true,
   },
   {
-    slug: 'bite-insight---health-app',
+    slug: 'bite-insight',
     title: 'Bite Insight — Health App',
     tag: 'Product Design',
-    img: '/images/work/bite-insight/bite-insight.jpg',
+    img: '/images/work/bite-insight/bite-insight.webp',
+    video: '/video/bite-insight.webm',
   },
   {
     slug: 'pain-emotion-ai-app',
     title: 'Pain Emotion — AI App',
     tag: 'Product Design',
-    img: '/images/work/huumun/pain-emotion.jpg',
+    img: '/images/work/pain-emotion-ai-app/cover.webp',
   },
   {
-    slug: 'euro-2020---tournament-app',
+    slug: 'euro-2020-tournament-app',
     title: 'Euro 2020 — Tournament App',
     tag: 'Product Design',
-    img: '/images/work/pixel-jam/euro-2020.png',
+    img: '/images/work/pixel-jam/euro-2020.webp',
   },
   {
     slug: 'the-cornermen-website-design',
@@ -44,7 +47,7 @@ const work = [
     slug: 'chronic-pain-academy',
     title: 'Chronic Pain Academy',
     tag: 'UI Design',
-    img: '/images/work/huumun/chronic-pain.png',
+    img: '/images/work/huumun/chronic-pain.webp',
   },
 ];
 
@@ -66,13 +69,15 @@ const career = [
     projects: ['Upgrades Xsell journey', 'Book a repair journey', 'Research playback for stakeholders'] },
   { years: '2021', company: 'Fastic', role: 'Senior UI/UX Designer', kind: 'Contract',
     blurb: 'Restructured the long "take the quiz" onboarding into a multi-step flow. Conversion improved, and the testing behind it kept producing insights the team used.',
+    img: '/images/work/fastic/fastic-mobile-app-dashboard/cover.webp',
+    href: '/work/fastic-mobile-app-dashboard',
     projects: ['"Take the quiz" onboarding restructure', 'Goals screen', 'In-quiz promo segments'] },
   { years: '2021', company: 'BMI Group', role: 'Senior UI/UX Designer', kind: 'Contract',
     blurb: 'A one month contract rebuilding an Adobe XD library in Figma. The first stop after going freelance.',
     projects: ['Adobe XD to Figma library rebuild'] },
   { years: '2017 — 21', company: 'huumun', role: 'Senior UI/UX & Motion Designer', kind: 'Perm',
     blurb: 'Led the Pharmiweb Solutions rebrand to huumun from concept through rollout, in between clinical app work for the big pharma names.',
-    img: '/images/career/huumun.png',
+    img: '/images/career/huumun.webp',
     projects: ['Pharmiweb to huumun rebrand', 'Pfizer Pain Management Academy app', 'Nucala Index app'] },
   { years: '2016', company: 'Volume', role: 'Senior Designer', kind: 'Perm',
     blurb: 'Digital content and wireframes built on proper content hierarchy, plus mentoring the junior designers.' },
@@ -86,6 +91,17 @@ const career = [
     blurb: 'Where it started, and the only designer in the building. Websites in HTML, CSS and JavaScript (and yes, Flash), banners and GIFs for digital campaigns, and print from business cards to instructional booklets.',
     tags: ['HTML / CSS / JS', 'Flash sites & banners', 'GIFs', 'Print design'] },
 ];
+
+// each card plays its case study's hero video on hover, so adding a video in
+// the editor is enough — nothing to repeat here
+const allWork = await getWork();
+const heroVideos = new Map(allWork.map((e) => [e.id, e.data.video]));
+// the cards run in the work page's order (the `order` field in the editor);
+// whichever comes first takes the wide slot
+const rank = new Map(allWork.map((e, i) => [e.id, i]));
+work.sort((a, b) => (rank.get(a.slug) ?? 99) - (rank.get(b.slug) ?? 99));
+work.forEach((p, i) => { p.feature = i === 0; });
+const workCards = work.map((p) => ({ ...p, video: p.video ?? heroVideos.get(p.slug) }));
 
 const marqueeItems = ['Design Systems', 'UI Design', 'UX', 'Motion', 'Brand', 'Figma', 'Tokens', 'Prototyping'];
 
@@ -104,9 +120,9 @@ const brands = [
   { name: 'Lloyds Bank', img: '/images/brands/lloyds.svg', h: 52 },
   { name: 'British Gas', img: '/images/brands/british-gas.svg', h: 52 },
   { name: 'Three', img: '/images/brands/three.svg', h: 56 },
-  { name: 'SMARTY', img: '/images/brands/smarty.svg' },
+  { name: 'SMARTY', img: '/images/brands/smarty.svg', h: 36 },
   { name: 'CIBC', img: '/images/brands/cibc.svg', h: 30 },
-  { name: 'HSBC', img: '/images/brands/hsbc.svg' },
+  { name: 'HSBC', img: '/images/brands/hsbc.svg', h: 36 },
   { name: 'Scottish Widows', img: '/images/brands/scottish-widows.svg', h: 44 },
   { name: 'Nationwide', img: '/images/brands/nationwide.svg', h: 30 },
   { name: 'Fastic', img: '/images/brands/fastic.svg', h: 52 },
@@ -122,17 +138,18 @@ const brands = [
       name="description"
       content="Glenn Cahill is a UK-based designer specialising in design systems, UI/UX and motion. Twenty years of shipping digital products for banks, telcos and startups."
     />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="preload" href="/fonts/grift-regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/grift-extrabold.woff2" as="font" type="font/woff2" crossorigin />
-    <!-- TEMP: Figma capture — remove after export -->
-    <script is:inline src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
     <meta property="og:title" content="Glenn Cahill — Design Systems & UI Design" />
     <meta property="og:description" content="Design systems, interfaces and motion. Twenty years in." />
     <meta property="og:type" content="website" />
   </head>
 
   <body>
+    <PageVeil />
     <div class="grain" aria-hidden="true"></div>
     <div class="progress" aria-hidden="true"></div>
     <div class="cursor-glow" aria-hidden="true"></div>
@@ -146,7 +163,7 @@ const brands = [
           <a class="nav-link" href="#about"><i>01</i>About</a>
           <a class="nav-link" href="#work"><i>02</i>Work</a>
           <a class="nav-link" href="#career"><i>03</i>Career</a>
-          <a class="nav-link" href="#passions"><i>04</i>Passions</a>
+          <a class="nav-link" href="#passions"><i>04</i>Passion Projects</a>
           <Button href="#contact">Let's talk</Button>
         </div>
       </div>
@@ -213,18 +230,22 @@ const brands = [
         <div class="about-grid">
           <div class="about-copy">
             <p class="reveal">
-              I've spent two decades in digital design, and most of it where
-              <strong>design meets code</strong>. These days I build
-              <span class="accent">design systems</span> — the tokens, the components, the
-              documentation nobody else wants to write — for companies like Lloyds, Three and
-              British Gas.
+              With two decades of expertise in digital design, I operate at the crossroads of
+              design and technology. My current focus is on developing comprehensive
+              <span class="accent">design systems</span> (encompassing tokens, foundational
+              elements, components, and templates) to create a seamless ecosystem that simplifies
+              the design journey from concept to completion.
             </p>
             <p class="reveal" style="--d: 0.1s">
-              A good system means a designer ships in hours, not weeks. That's what I'm after.
+              A well-crafted design system enables designers to achieve results in days instead of
+              weeks or months, ensuring greater consistency throughout. I enjoy delving into the
+              finer details, making sure that my creations not only support development but also
+              elevate the user experience. My journey started with extensive work in UI, branding,
+              and motion design, which continues to shape my perspective.
             </p>
             <p class="reveal" style="--d: 0.2s">
-              Before the systems work came years of UI, brand and motion design. It still shows —
-              I care how things move, not only how they look.
+              I am deeply passionate about the dynamics of design, paying careful attention to both
+              the movement of elements and their visual impact.
             </p>
           </div>
 
@@ -265,14 +286,19 @@ const brands = [
         </div>
 
         <div class="work-grid">
-          {work.map((p, i) => (
+          {workCards.map((p, i) => (
             <a
-              class={`work-card reveal${p.feature ? ' feature' : ''}`}
+              class={`work-card neon reveal${p.feature ? ' feature' : ''}`}
               style={`--d: ${(i % 2) * 0.1}s`}
               href={`/work/${p.slug}`}
             >
               <div class="work-media">
-                <img src={p.img} alt={p.title} loading={i < 2 ? 'eager' : 'lazy'} />
+                <img src={p.img} alt={p.title} loading={i < 2 ? 'eager' : 'lazy'} data-cover={p.slug} />
+                {p.video && (
+                  <video muted loop playsinline preload="metadata" aria-hidden="true">
+                    {videoSources(p.video).map((s) => <source src={s.src} type={s.type} />)}
+                  </video>
+                )}
               </div>
               <div class="work-info">
                 <div>
@@ -285,6 +311,7 @@ const brands = [
                   </svg>
                 </span>
               </div>
+              <i class="neon-edge" aria-hidden="true"></i>
             </a>
           ))}
         </div>
@@ -304,9 +331,13 @@ const brands = [
         </div>
 
         <div class="career-list">
-          {career.map((job, i) => (
-            <div
-              class="career-row reveal"
+          {career.map((job, i) => {
+            // a role with a case study behind it becomes a link to that page
+            const Row = job.href ? 'a' : 'div';
+            return (
+            <Row
+              class:list={['career-row', 'reveal', job.href && 'has-case']}
+              href={job.href}
               style={`--d: ${Math.min(i * 0.04, 0.3)}s`}
               data-company={job.company}
               data-years={job.years}
@@ -334,8 +365,9 @@ const brands = [
                   </div>
                 )}
               </div>
-            </div>
-          ))}
+            </Row>
+            );
+          })}
         </div>
 
         <div class="career-card" id="careerCard" aria-hidden="true">
@@ -358,18 +390,15 @@ const brands = [
       <div class="wrap">
         <div class="section-head reveal">
           <span class="section-num">04</span>
-          <h2 class="section-title">Passions</h2>
+          <h2 class="section-title">Passion Projects</h2>
           <span class="rule"></span>
         </div>
 
         <div class="passion-grid">
           <a class="passion-card reveal" href="https://pixeljam.design" target="_blank" rel="noopener">
-            <div class="passion-bg" aria-hidden="true">
-              <img src="/images/passions/pixel-jam.webp" alt="" loading="lazy" onerror="this.remove()" />
-            </div>
+            <img class="passion-icon" src="/images/passions/pixel-jam-icon.png" alt="" width="108" height="108" loading="lazy" onerror="this.remove()" />
             <span class="tag">Design studio</span>
-            <img class="passion-logo" src="/images/passions/pixel-jam-logo.svg" alt="Pixel Jam" onerror="this.nextElementSibling.hidden = false; this.remove()" />
-            <h3 hidden>Pixel Jam</h3>
+            <h3>Pixel Jam</h3>
             <div class="passion-more">
               <div class="passion-more-inner">
                 <p>The studio side of my desk. Where the client hat comes off and the ideas that don't fit a brief get built anyway.</p>
@@ -383,12 +412,9 @@ const brands = [
           </a>
 
           <a class="passion-card reveal" style="--d: 0.1s" href="https://biteinsight.co.uk/" target="_blank" rel="noopener">
-            <div class="passion-bg" aria-hidden="true">
-              <img src="/images/passions/bite-insight.webp" alt="" loading="lazy" onerror="this.remove()" />
-            </div>
+            <img class="passion-icon" src="/images/passions/bite-insight-icon.png" alt="" width="108" height="108" loading="lazy" onerror="this.remove()" />
             <span class="tag">Side project</span>
-            <img class="passion-logo" src="/images/passions/bite-insight-logo.svg" alt="Bite Insight" onerror="this.nextElementSibling.hidden = false; this.remove()" />
-            <h3 hidden>Bite Insight</h3>
+            <h3>Bite Insight</h3>
             <div class="passion-more">
               <div class="passion-more-inner">
                 <p>A food scanner app that makes sense of the label for you. Scan a barcode and see what's inside, checked against your own health conditions, allergies and diet.</p>
@@ -425,9 +451,38 @@ const brands = [
         <span>© 2026 Glenn Cahill. Designed and built by me.</span>
         <span>Reading, UK</span>
       </div>
+      <p class="wrap footer-note">No cookies, no tracking. The game remembers your sound settings on your device, and that's it.</p>
     </footer>
 
     <script>
+      // Tapped work card: name its cover just before the browser captures the
+      // page, so the cross-document view transition flies it to fullscreen
+      document.addEventListener('click', (e) => {
+        const card = e.target.closest?.('.work-card');
+        const img = card?.querySelector('.work-media img[data-cover]');
+        if (!img) return;
+        document.querySelectorAll('.work-media img[data-cover]').forEach((el) => { el.style.viewTransitionName = ''; });
+        img.style.viewTransitionName = `cover-${img.dataset.cover}`;
+        try { sessionStorage.setItem('cover-morph', img.dataset.cover); } catch {}
+      });
+      // arriving here is never a cover morph; skip the default crossfade
+      addEventListener('pagereveal', (e) => { e.viewTransition?.skipTransition(); });
+
+      // work cards with a video: play silently while hovered (pointer devices only)
+      if (matchMedia('(hover: hover)').matches) {
+        document.addEventListener('pointerover', (e) => {
+          const card = e.target.closest?.('.work-card');
+          if (!card || card.contains(e.relatedTarget)) return;
+          card.querySelector('.work-media video')?.play().catch(() => {});
+        });
+        document.addEventListener('pointerout', (e) => {
+          const card = e.target.closest?.('.work-card');
+          if (!card || card.contains(e.relatedTarget)) return;
+          const v = card.querySelector('.work-media video');
+          if (v) { v.pause(); v.currentTime = 0; }
+        });
+      }
+
       // Split hero title into animated chars
       document.querySelectorAll('.hero-title .line').forEach((line, li) => {
         const text = line.textContent.trim();
@@ -436,33 +491,51 @@ const brands = [
           const s = document.createElement('span');
           s.className = 'char';
           s.textContent = ch;
-          s.style.animationDelay = `${0.15 + li * 0.12 + i * 0.045}s`;
+          s.style.animationDelay = `${0.08 + li * 0.1 + i * 0.035}s`;
           line.appendChild(s);
         });
       });
 
       // Tablet/mobile only: fit each title line to a share of the container width.
       // Desktop keeps the stylesheet's clamp() size untouched.
+      const measure = document.createElement('canvas').getContext('2d');
       const fitHeroTitle = () => {
         const fit = matchMedia('(max-width: 1024px)').matches;
+        const lines = [...document.querySelectorAll('.hero-title .line')];
+        lines.forEach((line) => { line.style.fontSize = ''; });
+        if (!fit) return;
         // phones: 80% of the width; tablets: 70%, leaving room for the portrait
         const factor = matchMedia('(max-width: 640px)').matches ? 0.8 : 0.7;
-        document.querySelectorAll('.hero-title .line').forEach((line) => {
-          if (!fit) { line.style.fontSize = ''; return; }
-          const chars = line.querySelectorAll('.char');
-          if (!chars.length) return;
-          const fs = parseFloat(getComputedStyle(line).fontSize);
-          const first = chars[0].getBoundingClientRect();
-          const last = chars[chars.length - 1].getBoundingClientRect();
-          const textW = last.right - first.left;
-          if (textW > 0) {
-            line.style.fontSize = `${fs * ((line.clientWidth * factor) / textW)}px`;
-          }
-        });
+        // size the title from GLENN's letters (their ink, not their boxes) and
+        // give CAHILL the same size, so the stylesheet's em step-in keeps the
+        // L's upright stroke level with the N at every width
+        const glenn = lines[0];
+        const chars = glenn?.querySelectorAll('.char');
+        if (!chars?.length) return;
+        const cs = getComputedStyle(glenn);
+        const fs = parseFloat(cs.fontSize);
+        const first = chars[0].getBoundingClientRect();
+        const last = chars[chars.length - 1].getBoundingClientRect();
+        measure.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        const inkL = measure.measureText(chars[0].textContent.toUpperCase()).actualBoundingBoxLeft;
+        const inkR = measure.measureText(chars[chars.length - 1].textContent.toUpperCase()).actualBoundingBoxRight;
+        const textW = last.left + inkR - (first.left - inkL);
+        if (textW <= 0) return;
+        const size = `${fs * ((glenn.clientWidth * factor) / textW)}px`;
+        lines.forEach((line) => { line.style.fontSize = size; });
       };
       document.fonts.ready.then(fitHeroTitle);
       let fitT;
-      addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitHeroTitle, 120); });
+      // Only width matters here. On a phone, the browser's toolbar sliding in
+      // and out fires resize on every scroll; refitting then would shift the
+      // page and set the toolbar off again, so height-only changes are ignored.
+      let lastW = innerWidth;
+      addEventListener('resize', () => {
+        if (innerWidth === lastW) return;
+        lastW = innerWidth;
+        clearTimeout(fitT);
+        fitT = setTimeout(fitHeroTitle, 120);
+      });
 
       // Rotating role word
       const roles = ['design systems', 'interfaces', 'motion', 'brands'];
@@ -519,7 +592,13 @@ const brands = [
 
         size();
         seed();
-        addEventListener('resize', () => { size(); seed(); }, { passive: true });
+        let particlesW = innerWidth;
+        addEventListener('resize', () => {
+          if (innerWidth === particlesW) return; // height-only: the mobile toolbar
+          particlesW = innerWidth;
+          size();
+          seed();
+        }, { passive: true });
 
         // cursor position in hero coordinates; matches the cursor-glow radius
         const GLOW_R = 220;

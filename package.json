@@ -6,9 +6,19 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "questions": "node scripts/sync-case-questions.mjs",
+    "deploy": "find public src -name '._*' -delete; astro build && rsync -a --delete --exclude '._*' --exclude .DS_Store dist/ /var/www/glenncahill.com/",
+    "video": "node scripts/encode-video.mjs"
   },
   "dependencies": {
-    "astro": "^5.13.0"
+    "@anthropic-ai/sdk": "^0.127.0",
+    "@astrojs/react": "^4.4.2",
+    "@keystatic/astro": "^6.0.0",
+    "@keystatic/core": "^0.6.9",
+    "astro": "^5.13.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remark-sectionize": "^2.1.0"
   }
 }

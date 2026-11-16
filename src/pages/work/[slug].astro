@@ -1,12 +1,14 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { render } from 'astro:content';
+import { getWork } from '../../lib/work';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Button from '../../components/Button.astro';
 import HeroParticles from '../../components/HeroParticles.astro';
+import { videoSources } from '../../lib/video';
+import standardQuestions from '../../data/case-questions.json';
 
 export async function getStaticPaths() {
-  const projects = await getCollection('work');
-  const sorted = [...projects].sort((a, b) => a.data.order - b.data.order);
+  const sorted = await getWork();
   return sorted.map((entry, i) => ({
     params: { slug: entry.id },
     props: {
@@ -19,45 +21,791 @@ export async function getStaticPaths() {
 
 const { entry, prev, next } = Astro.props;
 const { Content } = await render(entry);
+const d = entry.data;
+// hero shows the project name alone; the tag pill carries the discipline.
+// Splits on an em dash, en dash or hyphen, so "Bite Insight - Health App"
+// and "Bite Insight — Health App" both give "Bite Insight".
+const heroTitle = d.heroTitle || d.title.split(/\s+[—–-]\s+/)[0];
+const linkLabel = d.link ? d.link.replace(/^https?:\/\//, '').replace(/\/$/, '') : '';
+
+// questions switched off in the editor are left out entirely; the rest carry
+// their writing prompt so the dev server can show what's still to answer
+const hints = new Map(
+  Object.values(standardQuestions).flat().map((q: { q: string; hint: string }) => [q.q, q.hint])
+);
+const questions = (d.questions ?? [])
+  // live pages skip unanswered questions; the dev server keeps them as prompts
+  .filter((q) => q.show && (import.meta.env.DEV || q.answer.trim()))
+  .map((q) => ({ chapter: q.chapter, question: q.question, answer: q.answer ?? '', hint: hints.get(q.question) ?? '' }));
+// escape "<" so the JSON can never end its script tag early
+const questionsJson = JSON.stringify(questions).replace(/</g, '\\u003c');
 ---
 
-<BaseLayout title={`${entry.data.title} | Glenn Cahill`} description={entry.data.excerpt}>
-  <header class="cs-hero">
-    <div class="aurora" aria-hidden="true">
-      <div class="blob blob-1"></div>
-      <div class="blob blob-3"></div>
+<BaseLayout title={`${d.title} | Glenn Cahill`} description={d.excerpt} router={true}>
+  <header class="cs-hero cs-cinema">
+    <div class="cs-cinema-bg" aria-hidden="true">
+      {d.video ? (
+        <video poster={d.cover} autoplay muted loop playsinline transition:name={`cover-${entry.id}`}>
+          {videoSources(d.video).map((s) => <source src={s.src} type={s.type} />)}
+        </video>
+      ) : (
+        <img src={d.cover} alt="" transition:name={`cover-${entry.id}`} />
+      )}
     </div>
     <HeroParticles />
-    <div class="wrap">
-      <p class="cs-crumb reveal"><a href="/work">Work</a> <span>/</span> {entry.data.tag}</p>
-      <h1 class="cs-title reveal">{entry.data.title}</h1>
-      {entry.data.excerpt && <p class="cs-excerpt reveal">{entry.data.excerpt}</p>}
+    <div class="cs-cinema-content">
+      <a class="tag" href="/work">{d.tag}</a>
+      <h1 class="cs-title">{heroTitle}</h1>
+      {d.excerpt && <p class="cs-excerpt">{d.excerpt}</p>}
+      {(d.role || d.link || d.year) && (
+        <Fragment>
+          <hr class="cs-hero-rule" />
+          <ul class="cs-hero-meta">
+            {d.year && <li><img src="/images/icons/calendar.svg" alt="" width="16" height="16" />{d.year}</li>}
+            {d.role && <li><img src="/images/icons/role.svg" alt="" width="16" height="16" />{d.role}</li>}
+            {d.link && <li><a href={d.link} target="_blank" rel="noopener"><img src="/images/icons/link.svg" alt="" width="16" height="16" />{linkLabel}</a></li>}
+          </ul>
+        </Fragment>
+      )}
+      {d.video && (
+        <button type="button" class="cs-watch" data-watch>
+          <img src="/images/icons/play.svg" alt="" width="20" height="20" />Watch the video
+        </button>
+      )}
     </div>
   </header>
 
-  <div class="wrap">
-    <div class="cs-cover reveal">
-      <img src={entry.data.cover} alt={entry.data.title} />
-    </div>
+  {d.video && (
+    // the hero loop is silent and cropped; this plays the film in full, with sound
+    <dialog class="cs-video-dialog" id="csVideo">
+      <button type="button" class="cs-video-close" data-close>
+        <svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span>Close</span>
+      </button>
+      <video controls playsinline preload="none" poster={d.cover}>
+        {videoSources(d.video).map((s) => <source src={s.src} type={s.type} />)}
+      </video>
+    </dialog>
+  )}
 
-    <article class="cs-body">
-      <Content />
-    </article>
+  <article class="cs-journey" id="journey">
+    <Content />
+  </article>
+  <script is:inline type="application/json" id="cs-questions" set:html={questionsJson} />
 
-    <nav class="cs-pager">
-      <a href={`/work/${prev.id}`} class="cs-pager-link">
-        <span>← Previous</span>
-        <b>{prev.data.title}</b>
-      </a>
-      <a href={`/work/${next.id}`} class="cs-pager-link cs-pager-next">
-        <span>Next →</span>
-        <b>{next.data.title}</b>
-      </a>
-    </nav>
+  {d.gallery?.show && d.gallery.items.length > 0 && (
+    // moved in after its chapter by the page script
+    <template id="cs-gallery" data-after={d.gallery.after ?? ''}>
+      <section class="cs-gallery">
+        <div class="cs-gallery-pin">
+          <div class="cs-gallery-stage">
+            <ul class="cs-gallery-track">
+              {d.gallery.items.map((item, i) => (
+                <li class={`cs-gallery-item neon${i === 0 ? ' is-on' : ''}`}>
+                  <button type="button" class="cs-gallery-open neon-edge" aria-label="View full screen">
+                    <img src={item.image} alt={item.caption ?? ''} loading="lazy" />
+                  </button>
+                  {item.caption && <figcaption>{item.caption}</figcaption>}
+                </li>
+              ))}
+            </ul>
+            <div class="cs-gallery-bar">
+              <p class="cs-gallery-count" aria-hidden="true">
+                {/* <b> with an expression inside a <template> trips the Astro compiler */}
+                {d.gallery.items.map((_, i) => (
+                  <span class={i === 0 ? 'is-on' : ''}>{String(i + 1).padStart(2, '0')}</span>
+                ))}
+              </p>
+              <div class="cs-gallery-nav">
+                <button type="button" class="cs-gallery-step" data-step="-1" aria-label="Previous image">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13 8H3M8 3L3 8L8 13" stroke="currentColor" stroke-width="1.82857" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button type="button" class="cs-gallery-step" data-step="1" aria-label="Next image">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8H13M8 3L13 8L8 13" stroke="currentColor" stroke-width="1.82857" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="cs-gallery-close" data-close aria-label="Close full screen">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M14.8571 8H1.14286M8 14.8571L1.14286 8L8 1.14286" stroke="currentColor" stroke-width="1.82857" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </section>
+    </template>
+  )}
 
-    <div class="cs-cta">
-      <p>Like what you see?</p>
-      <Button variant="primary" href="/#contact">Let's talk</Button>
-    </div>
+  {d.stats?.show && d.stats.items.length > 0 && (
+    // rendered here, moved into its chapter (above the questions) by the page script
+    <template id="cs-stats" data-chapter={d.stats.chapter ?? ''}>
+      <div class="cs-stats">
+        <ul class="cs-stats-list">
+          {d.stats.items.map((s) => (
+            <li class="cs-stat"><b>{s.value}</b><span>{s.label}</span></li>
+          ))}
+        </ul>
+        {d.stats.note && (
+          <p class="cs-stats-note"><img src="/images/icons/info.svg" alt="" width="16" height="16" />{d.stats.note}</p>
+        )}
+      </div>
+    </template>
+  )}
+
+  <div class="wrap cs-cta">
+    <p>Like what you see?</p>
+    <Button variant="primary" href="/#contact">Let's talk</Button>
   </div>
+
+  <section class="wrap cs-next">
+    <a class="cs-next-link" href={`/work/${prev.id}`}>
+      <img class="cs-next-bg" src={prev.data.cover} alt="" loading="lazy" data-cover={prev.id} />
+      <div class="cs-next-content">
+        <span class="cs-next-eyebrow">← Previous project</span>
+        <h2 class="cs-next-title">{prev.data.title}</h2>
+        <span class="tag">{prev.data.tag}</span>
+      </div>
+    </a>
+    <a class="cs-next-link" href={`/work/${next.id}`}>
+      <img class="cs-next-bg" src={next.data.cover} alt="" loading="lazy" data-cover={next.id} />
+      <div class="cs-next-content">
+        <span class="cs-next-eyebrow">Next project →</span>
+        <h2 class="cs-next-title">{next.data.title}</h2>
+        <span class="tag">{next.data.tag}</span>
+      </div>
+    </a>
+  </section>
 </BaseLayout>
+
+<script>
+  // chapters: each opens with its image filling the screen, which dims and
+  // settles back as the text scrolls over it (--p). A chapter with several
+  // images crossfades between them as the reader reaches each paragraph.
+  const initJourney = () => {
+    const journey = document.getElementById('journey');
+    if (!journey || journey.dataset.init) return;
+    journey.dataset.init = '1';
+
+    const chapters = [...journey.querySelectorAll<HTMLElement>(':scope > section')];
+
+    const textIO = new IntersectionObserver(
+      (entries) => entries.forEach((en) => { if (en.isIntersecting) en.target.classList.add('in'); }),
+      { threshold: 0.2, rootMargin: '0px 0px -10% 0px' }
+    );
+    const mediaIO = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((en) => {
+          if (!en.isIntersecting) return;
+          const p = en.target as HTMLElement;
+          const sec = p.closest('section')!;
+          const idx = Number(p.dataset.media);
+          sec.querySelectorAll<HTMLElement>('.cs-bg figure').forEach((f, i) => f.classList.toggle('active', i === idx));
+          sec.querySelectorAll<HTMLElement>('.cs-content > p[data-media]').forEach((q) => q.classList.toggle('current', q === p));
+        });
+      },
+      { rootMargin: '-35% 0px -45% 0px', threshold: 0 }
+    );
+
+    // Standard questions (src/data/case-questions.json), shown as cards. Tapping
+    // a card opens that answer as a full-screen view with a back button.
+    // Unanswered questions are hidden on the live site; the dev server shows
+    // them with their prompt so it is clear what is left to write.
+    const ARROW = '<svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M1 7H13M13 7L7 1M13 7L7 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    // questions come from the frontmatter (edited in the visual editor); ones
+    // switched off there never reach the page
+    type Q = { chapter: string; question: string; answer: string; hint: string };
+    const allQuestions: Q[] = JSON.parse(document.getElementById('cs-questions')?.textContent || '[]');
+
+    // an answer is plain text: each line is a paragraph, and lines starting
+    // with • or - run together as a bulleted list
+    const renderAnswer = (text: string, into: HTMLElement) => {
+      let ul: HTMLUListElement | null = null;
+      text.split('\n').map((l) => l.trim()).filter(Boolean).forEach((line) => {
+        const bullet = line.match(/^[•\-*]\s*(.*)$/);
+        if (bullet) {
+          if (!ul) { ul = document.createElement('ul'); into.append(ul); }
+          const li = document.createElement('li');
+          li.textContent = bullet[1];
+          ul.append(li);
+          return;
+        }
+        ul = null;
+        const p = document.createElement('p');
+        p.textContent = line;
+        into.append(p);
+      });
+    };
+
+    const buildFaq = (items: Q[], group: string) => {
+      const frame = document.createElement('div');
+      frame.className = 'cs-faq';
+      const list = document.createElement('div');
+      list.className = 'cs-faq-list';
+      frame.append(list);
+      let n = 0;
+      items.forEach((item) => {
+        const body = document.createElement('div');
+        body.className = 'cs-faq-body';
+        const hint = item.hint;
+        renderAnswer(item.answer || '', body);
+        const answered = body.childElementCount > 0;
+        if (!answered && !import.meta.env.DEV) return;
+
+        n++;
+        const question = item.question.trim();
+        const panelId = `${group}-q${n}`;
+
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = answered ? 'cs-faq-card neon' : 'cs-faq-card neon is-empty';
+        card.setAttribute('aria-controls', panelId);
+        card.setAttribute('aria-haspopup', 'dialog');
+        card.innerHTML = `<span class="neon-edge"></span><i>${ARROW}</i>`;
+        card.querySelector('span')!.textContent = question;
+        list.append(card);
+
+        // the answer takes over the whole screen: a modal dialog sits above
+        // everything, traps focus, and hands focus back to the card on close
+        const dialog = document.createElement('dialog');
+        dialog.className = 'cs-faq-dialog';
+        dialog.id = panelId;
+        dialog.setAttribute('aria-labelledby', `${panelId}-title`);
+        dialog.innerHTML = `<div class="cs-faq-dialog-inner">
+          <button type="button" class="cs-faq-back">${ARROW}<span>Back</span></button><h3></h3></div>`;
+        const title = dialog.querySelector('h3')!;
+        title.id = `${panelId}-title`;
+        title.textContent = question;
+        if (!answered) {
+          const p = document.createElement('p');
+          p.className = 'cs-faq-hint';
+          p.textContent = `Hidden on the live site until answered. ${hint}`;
+          body.append(p);
+        }
+        dialog.querySelector('.cs-faq-dialog-inner')!.append(body);
+        frame.append(dialog);
+
+        const open = () => {
+          dialog.showModal();
+          dialog.scrollTop = 0;
+        };
+        const close = () => {
+          if (!dialog.open || dialog.classList.contains('is-closing')) return;
+          // hand focus back to the card that opened it, wherever the click landed
+          const done = () => { dialog.classList.remove('is-closing'); dialog.close(); card.focus(); };
+          if (matchMedia('(prefers-reduced-motion: reduce)').matches) return done();
+          dialog.classList.add('is-closing');
+          setTimeout(done, 260);
+        };
+        card.addEventListener('click', open);
+        dialog.querySelector('.cs-faq-back')!.addEventListener('click', close);
+        // clicking the dark space around the answer closes it too
+        dialog.addEventListener('click', (e) => {
+          if (!(e.target as HTMLElement).closest('.cs-faq-dialog-inner')) close();
+        });
+        // Escape: run the same animated close rather than the instant default
+        dialog.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
+      });
+      return n ? frame : null;
+    };
+
+    // the full-screen carousel, if this case study has one
+    let gallery: HTMLElement | null = null;
+    let galleryRun = 0;
+
+    // the arrows, and the full-bleed view the card opens into
+    const initGalleryControls = (root: HTMLElement) => {
+      // the nav re-checks itself on scroll, so a nudge there keeps it out of
+      // the way while the picture is full bleed and brings it back after
+      const nudgeNav = () => dispatchEvent(new Event('scroll'));
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // the card grows into the full-bleed view and shrinks back. It is the
+      // box itself that's animated (position and size), not a scaled copy:
+      // the picture is cover-fitted, and the card and the screen crop it
+      // differently, so anything scaled would either squash it or jump to a
+      // different crop at the end. Re-fitting each frame costs a layout, but
+      // it's one element for half a second. On a phone the shapes are too
+      // different to grow between, so it fades.
+      let morphing: Animation | null = null;
+      // where the card was when it opened: the section is pinned while the
+      // picture is up, so that is exactly where it has to land on close
+      let opened: DOMRect | null = null;
+      const setFocus = (on: boolean) => {
+        const item = root.querySelector<HTMLElement>('.cs-gallery-item.is-on');
+        if (!item || root.classList.contains('is-focus') === on) return;
+        morphing?.cancel();
+        const stacked = matchMedia('(max-width: 900px)').matches;
+        const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+        const card = on || !opened ? item.getBoundingClientRect() : opened;
+        if (on) opened = card;
+        const finish = () => {
+          if (!on) { root.classList.remove('is-focus', 'is-closing'); resetZoom(); }
+          nudgeNav();
+          morphing = null;
+          if (on) root.querySelector<HTMLButtonElement>('.cs-gallery-close')!.focus();
+          else (item.querySelector('.cs-gallery-open') as HTMLElement | null)?.focus();
+        };
+        if (on) { root.classList.add('is-focus'); nudgeNav(); }
+        // the rest of the UI eases back while the box is still shrinking
+        else root.classList.add('is-closing');
+        if (reduced) return finish();
+
+        const img = item.querySelector('img');
+        let frames: Keyframe[];
+        let imgFrames: Keyframe[] | null = null;
+        if (stacked) {
+          frames = [{ opacity: 0, transform: 'scale(0.94)' }, { opacity: 1, transform: 'none' }];
+        } else {
+          frames = [
+            { top: `${card.top}px`, left: `${card.left}px`, width: `${card.width}px`, height: `${card.height}px`, padding: '8px', borderRadius: '24px' },
+            { top: '0px', left: '0px', width: `${innerWidth}px`, height: `${innerHeight}px`, padding: '0px', borderRadius: '0px' },
+          ];
+          imgFrames = [{ borderRadius: '16px' }, { borderRadius: '0px' }];
+        }
+        if (!on) { frames = [...frames].reverse(); if (imgFrames) imgFrames = [...imgFrames].reverse(); }
+        const duration = on ? 480 : 420;
+        const fill = on ? 'none' : 'forwards';
+        const anim = item.animate(frames, { duration, easing: ease, fill });
+        const imgAnim = img && imgFrames ? img.animate(imgFrames, { duration, easing: ease, fill }) : null;
+        morphing = anim;
+        let done = false;
+        const settle = () => {
+          if (done) return;
+          done = true;
+          anim.cancel();
+          imgAnim?.cancel();
+          finish();
+        };
+        anim.onfinish = settle;
+        // an animation that never reaches its end (a hidden tab, a cancel from
+        // elsewhere) must still hand over, or the view would be stuck
+        setTimeout(settle, duration + 80);
+      };
+      const unfocus = () => setFocus(false);
+
+      // on a touch screen the full-bleed picture can be pinched and dragged, so
+      // a tap on it mustn't close it — that's the close button's job
+      let lastPointer = 'mouse';
+      root.addEventListener('pointerdown', (e) => { lastPointer = e.pointerType; }, { capture: true });
+
+      root.querySelectorAll<HTMLButtonElement>('.cs-gallery-open').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (!btn.closest('.cs-gallery-item')!.classList.contains('is-on')) return;
+          if (root.classList.contains('is-focus') && lastPointer === 'touch') return;
+          setFocus(!root.classList.contains('is-focus'));
+        });
+      });
+      root.querySelector('[data-close]')!.addEventListener('click', unfocus);
+      addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && root.classList.contains('is-focus')) unfocus();
+      });
+
+      // pinch to zoom and drag to pan the full-bleed picture (touch only).
+      // The transform goes on the img, from its top-left corner; the picture
+      // can never be pushed off its own edges, and can't shrink below 1.
+      let zoom = 1, tx = 0, ty = 0;
+      let zoomed: HTMLImageElement | null = null;
+      const pointers = new Map<number, { x: number; y: number }>();
+      let pinch: { dist: number; zoom: number; mid: { x: number; y: number }; tx: number; ty: number } | null = null;
+      let lastTap = 0;
+
+      const apply = () => {
+        if (!zoomed) return;
+        // the element's own size, untouched by the transform
+        const cw = zoomed.offsetWidth, ch = zoomed.offsetHeight;
+        tx = Math.min(0, Math.max(cw - cw * zoom, tx));
+        ty = Math.min(0, Math.max(ch - ch * zoom, ty));
+        zoomed.style.transform = zoom === 1 ? '' : `translate(${tx}px, ${ty}px) scale(${zoom})`;
+      };
+      const resetZoom = () => {
+        zoom = 1; tx = 0; ty = 0; pointers.clear(); pinch = null;
+        if (zoomed) zoomed.style.transform = '';
+        zoomed = null;
+      };
+      const zoomAt = (next: number, px: number, py: number) => {
+        // keep the point under the fingers where it is while the scale changes
+        const s = next / zoom;
+        tx = px - (px - tx) * s;
+        ty = py - (py - ty) * s;
+        zoom = next;
+        apply();
+      };
+
+      root.addEventListener('pointerdown', (e) => {
+        if (e.pointerType !== 'touch' || !root.classList.contains('is-focus')) return;
+        const img = (e.target as HTMLElement).closest('.cs-gallery-item.is-on')?.querySelector('img') ?? null;
+        if (!img) return;
+        zoomed = img;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+        if (pointers.size === 2) {
+          const [a, b] = [...pointers.values()];
+          pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y), zoom, mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, tx, ty };
+        } else if (pointers.size === 1) {
+          // double tap: in to 2.5x on that spot, or back out
+          const now = performance.now();
+          if (now - lastTap < 300) {
+            const r = img.getBoundingClientRect();
+            const px = e.clientX - r.left, py = e.clientY - r.top;
+            zoomAt(zoom > 1 ? 1 : 2.5, px / zoom - tx / zoom, py / zoom - ty / zoom);
+            lastTap = 0;
+          } else lastTap = now;
+        }
+      });
+
+      root.addEventListener('pointermove', (e) => {
+        if (!pointers.has(e.pointerId) || !zoomed) return;
+        const prev = pointers.get(e.pointerId)!;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointers.size === 2 && pinch) {
+          const [a, b] = [...pointers.values()];
+          const dist = Math.hypot(a.x - b.x, a.y - b.y);
+          const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+          const next = Math.min(4, Math.max(1, pinch.zoom * (dist / pinch.dist)));
+          // scale about the pinch midpoint, then follow it as the fingers move
+          const r = zoomed.getBoundingClientRect();
+          const ox = pinch.mid.x - (r.left - pinch.tx), oy = pinch.mid.y - (r.top - pinch.ty);
+          const s = next / pinch.zoom;
+          tx = pinch.tx + (mid.x - pinch.mid.x) - (ox - pinch.tx) * (s - 1);
+          ty = pinch.ty + (mid.y - pinch.mid.y) - (oy - pinch.ty) * (s - 1);
+          zoom = next;
+          apply();
+        } else if (pointers.size === 1 && zoom > 1) {
+          tx += e.clientX - prev.x;
+          ty += e.clientY - prev.y;
+          apply();
+        }
+      });
+
+      const lift = (e: PointerEvent) => {
+        pointers.delete(e.pointerId);
+        if (pointers.size < 2) pinch = null;
+        if (zoom <= 1.02 && pointers.size === 0) { zoom = 1; tx = 0; ty = 0; apply(); }
+      };
+      root.addEventListener('pointerup', lift);
+      root.addEventListener('pointercancel', lift);
+
+      // the arrows land on the same scroll stops the wheel steps between
+      root.querySelectorAll<HTMLButtonElement>('.cs-gallery-step').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          // past either end it wraps round, so both arrows always do something
+          const items = root.querySelectorAll('.cs-gallery-item').length;
+          const at = (Number(root.dataset.i || 0) + Number(btn.dataset.step) + items) % items;
+          const top = root.getBoundingClientRect().top + scrollY + at * innerHeight;
+          const glide = (window as any).__csGlide as ((to: number) => void) | undefined;
+          if (glide) glide(top);
+          else scrollTo({ top, behavior: 'smooth' });
+        });
+      });
+    };
+
+    chapters.forEach((sec, i) => {
+      sec.id = sec.id || `chapter-${i + 1}`;
+      sec.style.setProperty('--n', `"${String(i + 1).padStart(2, '0')}"`);
+
+      const kids = [...sec.children] as HTMLElement[];
+      const mediaPs = kids.filter((p) => p.tagName === 'P' && p.querySelector('img, video') && p.textContent!.trim() === '');
+
+      const bg = document.createElement('div');
+      bg.className = 'cs-bg';
+      mediaPs.forEach((p) => {
+        const fig = document.createElement('figure');
+        fig.append(...p.childNodes);
+        bg.appendChild(fig);
+      });
+
+      const content = document.createElement('div');
+      content.className = 'cs-content';
+      let idx = 0, firstAssigned = false;
+      kids.forEach((el) => {
+        if (mediaPs.includes(el)) { idx = Math.min(idx + 1, mediaPs.length - 1); el.remove(); return; }
+        if (el.tagName === 'P' && mediaPs.length) {
+          el.dataset.media = String(Math.min(firstAssigned ? idx : 0, mediaPs.length - 1));
+          firstAssigned = true;
+          mediaIO.observe(el);
+        }
+        textIO.observe(el);
+        content.appendChild(el);
+      });
+
+      // metric cards (frontmatter `stats`) go into the chosen chapter, above its questions
+      const statsTpl = document.getElementById('cs-stats') as HTMLTemplateElement | null;
+      if (statsTpl && !statsTpl.dataset.used) {
+        const want = (statsTpl.dataset.chapter || '').trim().toLowerCase();
+        const title = (content.querySelector(':scope > h2')?.textContent || '').trim().toLowerCase();
+        if (want ? title === want : i === 0) {
+          statsTpl.dataset.used = '1';
+          const stats = statsTpl.content.firstElementChild!.cloneNode(true) as HTMLElement;
+          textIO.observe(stats);
+          content.appendChild(stats);
+        }
+      }
+
+      // the gallery (frontmatter `gallery`) sits between this chapter and the next
+      const galleryTpl = document.getElementById('cs-gallery') as HTMLTemplateElement | null;
+      if (galleryTpl && !galleryTpl.dataset.used) {
+        const want = (galleryTpl.dataset.after || '').trim().toLowerCase();
+        const title = (content.querySelector(':scope > h2')?.textContent || '').trim().toLowerCase();
+        if (want ? title === want : i === 0) {
+          galleryTpl.dataset.used = '1';
+          gallery = galleryTpl.content.firstElementChild!.cloneNode(true) as HTMLElement;
+          sec.after(gallery);
+          initGalleryControls(gallery);
+        }
+      }
+
+      const chapterName = (content.querySelector(':scope > h2')?.textContent || '').trim().toLowerCase();
+      const faq = buildFaq(allQuestions.filter((q) => q.chapter.trim().toLowerCase() === chapterName), sec.id);
+      if (faq) { textIO.observe(faq); content.appendChild(faq); }
+
+      if (mediaPs.length) sec.appendChild(bg);
+      else sec.classList.add('no-media');
+      sec.appendChild(content);
+      bg.querySelector('figure')?.classList.add('active');
+    });
+
+    // backdrop progress: 0 while the image owns the screen, 1 once the text has
+    // arrived. The text's resting place is the scroll stop the stepper uses, so
+    // the dimming has to finish exactly there — a fixed screen's worth of scroll
+    // would leave a bright image behind the text on short chapters.
+    const revealRun = new Map<HTMLElement, number>();
+    const measure = () => {
+      chapters.forEach((sec) => {
+        const content = sec.querySelector<HTMLElement>(':scope > .cs-content');
+        const first = content?.firstElementChild as HTMLElement | null;
+        const last = content?.lastElementChild as HTMLElement | null;
+        const top = sec.getBoundingClientRect().top + scrollY;
+        if (!content || !first || !last) return revealRun.set(sec, innerHeight * 0.9);
+        const base = content.getBoundingClientRect().top + scrollY;
+        const cTop = base + first.offsetTop;
+        const cBottom = base + last.offsetTop + last.offsetHeight;
+        const h = cBottom - cTop, vh = innerHeight, gap = 110;
+        const reveal = h <= vh - gap * 2 ? cTop - (vh - h) / 2 : cTop - gap;
+        revealRun.set(sec, Math.max(1, reveal - top));
+      });
+
+      // the carousel is pinned for one screen per image: the card stays put and
+      // the picture in it changes with each step. Below 900px it is a plain
+      // vertical stack, so it needs no extra height.
+      if (gallery) {
+        const n = gallery.querySelectorAll('.cs-gallery-item').length;
+        const stacked = matchMedia('(max-width: 900px)').matches;
+        gallery.dataset.mode = stacked ? 'stacked' : 'cards';
+        gallery.style.height = '';
+        galleryRun = stacked ? 0 : innerHeight * Math.max(0, n - 1);
+        if (galleryRun) gallery.style.height = `${innerHeight + galleryRun}px`;
+      }
+    };
+
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      chapters.forEach((sec) => {
+        const top = sec.getBoundingClientRect().top;
+        const p = Math.max(0, Math.min(1, -top / (revealRun.get(sec) || innerHeight * 0.9)));
+        sec.style.setProperty('--p', p.toFixed(3));
+      });
+
+      // one image per screen of scroll: work out which one is due and swap it in
+      if (gallery && galleryRun) {
+        const top = gallery.getBoundingClientRect().top;
+        const travelled = Math.max(0, Math.min(galleryRun, -top));
+        const items = [...gallery.querySelectorAll<HTMLElement>('.cs-gallery-item')];
+        const i = Math.max(0, Math.min(items.length - 1, Math.round(travelled / innerHeight)));
+        if (gallery.dataset.i !== String(i)) {
+          gallery.dataset.i = String(i);
+          items.forEach((li, k) => {
+            // distance from the one on show: CSS slides it that far to the side
+            li.style.setProperty('--d', String(k - i));
+            li.classList.toggle('is-on', k === i);
+            li.classList.toggle('is-near', Math.abs(k - i) === 1);
+          });
+          gallery.querySelectorAll('.cs-gallery-count span')
+            .forEach((n, k) => n.classList.toggle('is-on', k === i));
+          // stepping away from a picture closes the full-bleed view
+          gallery.classList.remove('is-focus');
+        }
+      }
+    };
+    addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    // width-only: a height change on a phone is the toolbar, not a new layout
+    let lastW = innerWidth;
+    addEventListener('resize', () => {
+      if (innerWidth === lastW) return;
+      lastW = innerWidth;
+      measure();
+      update();
+    });
+    addEventListener('load', () => { measure(); update(); });
+    measure();
+    update();
+
+  };
+  // Wheel/trackpad stepping. Native scroll-snap-stop is unreliable against
+  // trackpad momentum, so on wheel devices one gesture moves exactly one
+  // screen: leftover momentum is swallowed while the step animates. Inside a
+  // chapter taller than the viewport, scrolling stays free until its edge.
+  const initStepper = () => {
+    const w = window as any;
+    if (w.__csStepper) return;
+    w.__csStepper = true;
+    // touch keeps CSS snapping. Anything that isn't definitely a touch screen
+    // gets the stepper: some browsers report an odd pointer type, and without
+    // the stepper a chapter just free-scrolls and stops wherever it lands.
+    if (matchMedia('(pointer: coarse)').matches) return;
+
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let locked = false;
+    let lastWheel = 0;
+
+    // Each stop is where a step lands (at) and how far the reader can then
+    // scroll freely before the next step (end). A chapter has two stops: its
+    // image filling the screen, then its content revealed over the dimmed image.
+    type Stop = { at: number; end: number };
+    const stops = (): Stop[] => {
+      const vh = innerHeight;
+      const max = document.documentElement.scrollHeight - vh;
+      const list: Stop[] = [];
+      const add = (at: number, end: number | null) => {
+        at = Math.min(Math.round(at), max);
+        list.push({ at, end: end === null ? NaN : Math.max(at, Math.min(Math.round(end), max)) });
+      };
+      document.querySelectorAll<HTMLElement>('.cs-cinema, .cs-journey > section, .cs-cta, .cs-next').forEach((el) => {
+        const top = el.getBoundingClientRect().top + scrollY;
+        // the carousel: one stop per image, so each step swaps the card and the
+        // last one carries on into the next chapter
+        if (el.matches('.cs-gallery')) {
+          if (el.dataset.mode === 'stacked') return add(top, top + el.offsetHeight - vh);
+          const n = el.querySelectorAll('.cs-gallery-item').length;
+          for (let k = 0; k < n; k++) add(top + k * vh, top + k * vh);
+          return;
+        }
+        const content = el.matches('.cs-journey > section') ? el.querySelector<HTMLElement>(':scope > .cs-content') : null;
+        const first = content?.firstElementChild as HTMLElement | null;
+        const last = content?.lastElementChild as HTMLElement | null;
+        if (!first || !last) return add(top, null);
+        // offsets, not rects: the text's lift-in transform would shift a rect by 24px
+        const base = content!.getBoundingClientRect().top + scrollY;
+        const cTop = base + first.offsetTop;
+        const cBottom = base + last.offsetTop + last.offsetHeight;
+        const h = cBottom - cTop;
+        const gap = 110; // clears the nav
+        // short content sits centred on screen; long content starts under the nav
+        const reveal = h <= vh - gap * 2 ? cTop - (vh - h) / 2 : cTop - gap;
+        add(top, top); // image: next step goes straight to the content
+        add(reveal, cBottom + 64 - vh); // content: free scroll only if it overflows
+      });
+      list.sort((a, b) => a.at - b.at);
+      // near the bottom several sections can't scroll to their own top, so their
+      // stops all clamp to the end of the page. Merge them into one, or a step up
+      // lands on another stop at the same spot and the page never moves.
+      for (let k = list.length - 1; k > 0; k--) {
+        if (list[k].at - list[k - 1].at <= 2) {
+          list[k - 1].end = Math.max(list[k - 1].end || 0, list[k].end || 0) || NaN;
+          list.splice(k, 1);
+        }
+      }
+      // anything without its own end scrolls freely up to the next stop
+      list.forEach((s, k) => {
+        const next = list[k + 1]?.at ?? max;
+        if (Number.isNaN(s.end)) s.end = Math.max(s.at, next - vh);
+        s.end = Math.min(s.end, next);
+      });
+      if (!list.length || list[list.length - 1].at < max - 2) list.push({ at: max, end: max });
+      return list;
+    };
+
+    const glide = (to: number) => {
+      locked = true;
+      const from = scrollY, dist = to - from;
+      const dur = reduced ? 0 : Math.min(520, 240 + Math.abs(dist) * 0.19);
+      const t0 = performance.now();
+      const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+      const frame = (now: number) => {
+        const t = dur ? Math.min(1, (now - t0) / dur) : 1;
+        window.scrollTo({ top: from + dist * ease(t), behavior: 'instant' as ScrollBehavior });
+        if (t < 1) requestAnimationFrame(frame);
+        else {
+          // stay locked until the trackpad's momentum tail has died away, but
+          // never for longer than a couple of seconds: a lock left behind by an
+          // interrupted step would swallow every gesture that followed
+          const until = performance.now() + 900;
+          const release = () => {
+            if (performance.now() - lastWheel > 90 || performance.now() > until) locked = false;
+            else setTimeout(release, 40);
+          };
+          setTimeout(release, 40);
+        }
+      };
+      requestAnimationFrame(frame);
+    };
+    w.__csGlide = glide;
+
+    addEventListener(
+      'wheel',
+      (e) => {
+        if (!document.getElementById('journey') || e.ctrlKey) return;
+        // the answer view scrolls itself; the full-screen picture shouldn't move the page
+        if (document.querySelector('.cs-faq-dialog[open], .cs-gallery.is-focus')) return;
+        lastWheel = performance.now();
+        if (locked) { e.preventDefault(); return; }
+        if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+
+        const s = stops();
+        const y = scrollY;
+        let i = 0;
+        for (let k = 0; k < s.length; k++) if (s[k].at <= y + 2) i = k;
+        const cur = s[i];
+        const next = s[i + 1];
+
+        if (e.deltaY > 0) {
+          if (y < cur.end - 2) {
+            // content taller than the screen: free scroll, but never past its end in one go
+            e.preventDefault();
+            window.scrollTo({ top: Math.min(y + e.deltaY, cur.end), behavior: 'instant' as ScrollBehavior });
+            return;
+          }
+          if (next && next.at > y + 2) { e.preventDefault(); glide(next.at); }
+        } else if (e.deltaY < 0) {
+          if (y > cur.at + 2) {
+            // between stops (or partway through long content): scroll back freely to the stop,
+            // or step to it if we're sitting in the gap after its free-scroll range
+            e.preventDefault();
+            if (y > cur.end + 2) glide(cur.end);
+            else window.scrollTo({ top: Math.max(y + e.deltaY, cur.at), behavior: 'instant' as ScrollBehavior });
+            return;
+          }
+          // step back to where the previous stop's reading ended, so going
+          // backwards is natural; skip any stop that wouldn't actually move us
+          for (let k = i - 1; k >= 0; k--) {
+            if (s[k].end < y - 2) { e.preventDefault(); glide(s[k].end); break; }
+          }
+        }
+      },
+      { passive: false }
+    );
+  };
+  // hero "Watch the video": opens the film full screen with sound, pauses and
+  // rewinds on close so it never keeps playing behind the page
+  const initWatch = () => {
+    const dialog = document.getElementById('csVideo') as HTMLDialogElement | null;
+    const open = document.querySelector<HTMLButtonElement>('[data-watch]');
+    if (!dialog || !open || open.dataset.init) return;
+    open.dataset.init = '1';
+    const video = dialog.querySelector('video')!;
+    const stop = () => { video.pause(); video.currentTime = 0; };
+    open.addEventListener('click', () => {
+      dialog.showModal();
+      video.play().catch(() => {});
+    });
+    dialog.querySelector('[data-close]')!.addEventListener('click', () => dialog.close());
+    // clicking the dark space around the film closes it
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener('close', stop);
+  };
+  initWatch();
+  document.addEventListener('astro:page-load', initWatch);
+
+  initStepper();
+
+  initJourney();
+  document.addEventListener('astro:page-load', initJourney);
+</script>

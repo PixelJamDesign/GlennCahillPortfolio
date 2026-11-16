@@ -1,16 +1,48 @@
 ---
-title: "SimmoSalt"
-tag: "UI Design"
-cover: "/images/work/pixel-jam/simmosalt-website-design/cover.webp"
-excerpt: "An e-commerce site for water softener products, designed to be friendlier than every competitor I researched. Customisable products included."
-order: 15
+title: SimmoSalt
+tag: UI Design
+cover: /images/work/simmosalt-website-design/cover.webp
+excerpt: An e-commerce site for water softener products, designed to be friendlier than every competitor I researched. Customisable products included.
+order: 16
+questions:
+  - chapter: Background
+    question: What was the challenge?
+    show: true
+    answer: ""
+  - chapter: Background
+    question: What informed the direction?
+    show: true
+    answer: ""
+  - chapter: The work
+    question: What was my approach?
+    show: true
+    answer: ""
+  - chapter: The work
+    question: What did I design?
+    show: true
+    answer: ""
+  - chapter: The work
+    question: What were the key considerations?
+    show: true
+    answer: ""
+  - chapter: The result
+    question: What was the outcome?
+    show: true
+    answer: ""
+  - chapter: The result
+    question: What did this enable?
+    show: true
+    answer: ""
+notes: |-
+  The work: image suggestion: the product customisation flow, step by step — it's called out as the hardest problem but there's no image of it
+  The work: image suggestion: one wireframe beside its final high-fidelity screen
 ---
 
 ## Background
 
 SimmoSalt.co.uk needed a new e-commerce site to launch their water softener products. I began where I usually do with e-commerce: in the competitors' checkouts. Researching how the rest of the market sells made it clear where SimmoSalt could simply be easier to buy from.
 
-![](/images/work/pixel-jam/simmosalt-website-design/01.webp)
+![](/images/work/simmosalt-website-design/01.webp)
 
 ## The work
 
@@ -18,10 +50,7 @@ Wireframes came first, then a proper round of user testing before a single pixel
 
 The knottiest problem was customisation. Some of SimmoSalt's products can be configured by the customer, and configurable products are where e-commerce UIs usually fall apart. Getting that flow to feel as simple as adding a t-shirt to a basket took the most iterations of anything on the project.
 
-<!-- image suggestion: the product customisation flow, step by step — it's called out as the hardest problem but there's no image of it -->
-<!-- image suggestion: one wireframe beside its final high-fidelity screen -->
-
-![](/images/work/pixel-jam/simmosalt-website-design/02.webp)
+![](/images/work/simmosalt-website-design/02.webp)
 
 ## The result
 
